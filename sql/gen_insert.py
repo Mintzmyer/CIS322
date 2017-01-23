@@ -4,9 +4,12 @@ import psycopg2
 
 
 def lostQuery(sqlQuery):
-    conn = psycopg2.connect("dbname=lost user=osnapdev")
+    conn = psycopg2.connect("dbname='lost' host='127.0.0.1'")
     cur = conn.cursor()
-    result = cur.exec(sqlQuery)
+    result = cur.execute(sqlQuery)
+    conn.commit()
+    cur.close()
+    conn.close()
     return result
            # "SELECT user_id from users where ... INSERT INTO assets")
 
@@ -14,11 +17,12 @@ def lostQuery(sqlQuery):
 # Create order...spec doc order probably a good place to start
 # Import File
 def parseFile(csvFile):
-    legacy = csvFile.split('.csv')[0]
+    legacy = csvFile.split('/')[-1]
+    legacy = legacy.split('.csv')[0]
+    print("Legacy:\n"+legacy+"\n")
 
     with open(csvFile) as table:
         lines = table.readlines()
-#        lines = [x.strip() for x in lines]
     for line in lines:
         line = line.split(',')
 
@@ -117,11 +121,11 @@ def commonName(fcode):
         'HQ': 'Headquarters',
         'DC': 'Washington, D.C.',
         'NC': 'National City',
-        'SPNC': 'Sparks, Nevada',
+        'SPNV': 'Sparks, Nevada',
         'GL': 'Groom Lake',
         'LANM': 'Los Alamos, New Mexico',
         'MB005': 'MB 005',
-        'S300': 'Site 300'
+        'S300': 'Site 300',
         }[fcode]
 
 
@@ -232,7 +236,10 @@ def levelsInsert(lines):
 
 def compartmentsInsert(lines):
     #Find relevant data
+    lines[0] = lines[0].split(',')
     for i in range(len(lines[0])):
+        lines[0][i] = lines[0][i].split()[0]
+        print(lines[0][i]+'!')
         if lines[0][i] == 'compartment_tag': abbrv = i
         if lines[0][i] == 'compartment_desc': desc = i
     for line in lines[:1]:
