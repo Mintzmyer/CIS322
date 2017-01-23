@@ -25,6 +25,7 @@ def parseFile(csvFile):
     for line in lines:
         line = line.split(',')
 
+    facilitiesInsert(lines)
     tables = updateTables(legacy)
     callInsert(tables, legacy, lines)
 
@@ -37,7 +38,7 @@ def productsInsert(lines):
         if lines[0][i] == 'name': name = i
     #Check product is not already inserted
     for line in lines[1:]:
-        preexisting = "SELECT product_pk from products where vendor='"+line[vendor]+"' and description='"+line[name]"';"
+        preexisting = "SELECT product_pk from products where vendor='"+line[vendor]+"' and description='"+line[name]+"';"
         exists = lostQuery(preexisting)
         #Insert Product/Check return success
         if not (exists):
@@ -105,14 +106,27 @@ def vehiclesInsert(lines):
                 if not (inserted): print("Error, "+vehicle+" not inserted into vehicles")
 
 def facilitiesInsert(lines):
-    facilities = [HQ, DC, NC, SPNV, MB005]
+    facilities = ['HQ', 'DC', 'NC', 'SPNV', 'MB005', 'GL', 'LANM', 'S300']
     for facility in facilities:
         preexisting = "SELECT facility_pk from facilities where fcode='"+facility+"';"
         facility_pk = lostQuery(preexisting)
-        if not (facility_pk)
-            insertNew = "INSERT INTO facilities (fcode) VALUES ('"+facility+"');"
+        if not (facility_pk):
+            insertNew = "INSERT INTO facilities (fcode, common_name) VALUES ('"+facility+"', '"+commonName(facility)+"');"
             inserted = lostQuery(insertNew)
             if not (inserted): print("Error, "+facility+" not inserted into facilities")
+
+def commonName(fcode):
+    return {
+        'HQ': 'Headquarters',
+        'DC': 'Washington, D.C.',
+        'NC': 'National City',
+        'SPNC': 'Sparks, Nevada',
+        'GL': 'Groom Lake',
+        'LANM': 'Los Alamos, New Mexico',
+        'MB005': 'MB 005',
+        'S300': 'Site 300'
+        }[fcode]
+
 
 def asset_atInsert(legacy, lines):
     #Find relevant data
@@ -128,7 +142,7 @@ def asset_atInsert(legacy, lines):
         if lines[0][i] == 'asset tag': tag = i
         if lines[0][i] == 'intake date': intake = i
         if lines[0][i] == 'expunged date': expunged = i
-    for line in lines(1:):
+    for line in lines[:1]:
         preexisting = "SELECT asset_pk from assets where asset_tag='"+line[tag]+"';"
         asset_fk = lostQuery(preexisting)
         if not (asset_fk):
@@ -137,7 +151,7 @@ def asset_atInsert(legacy, lines):
             asset_fk = lostQuery(preexisting)
         preexisting = "SELECT facility_fk from asset_at where asset_fk='"+asset_fk+"';"
         exists = lostQuery(preexisting)
-        if not (exists)
+        if not (exists):
             insertNew = "INSERT INTO asset_at(asset_fk, facility_fk, arrive_dt, depart_dt) VALUES ('"+asset_fk+"', '"+facility_fk+"', '"+line[intake]+"', "+line[expunged]+"');"
             inserted = lostQuery(insertNew)
             if not (inserted): print("Error, "+asset_fk+" not inserted into asset_at")
@@ -146,23 +160,31 @@ def convoysInsert(lines):
     #Find relevant data
     for i in range(len(lines[0])):
         if lines[0][i] == 'transport request #': request = i
-        if lines[0][i] == 'depart time': depart = i
-        if lines[0][i] == 'arrive time': arrive = i
+        if lines[0][i] == 'depart date': depart = i
+        if lines[0][i] == 'arrive date': arrive = i
+        if lines[0][i] == 'src facility': src = i
+        if lines[0][i] == 'dst facility': dst = i
+
 
     #Check convoy is not already inserted
-    preexisting = "SELECT convoy_pk from convoys where request='"+line[request]+"';"
-    convoy_pk = lostQuery(preexisting)
-    if not (convoy_pk):
-        insertNew = "INSERT INTO convoys(request, depart_dt, arrive_dt) VALUES ('"+line[request]+"', '"+line[depart]+"', '"+line[arrive]+"');"
+    for line in lines[:1]:
+        facility = "SELECT facility_pk from facilities where common_name='"+line[src]+"';"
+        source_fk = lostQuery(facility)
+        facility = "SELECT facility_pk from facilities where common_name='"+line[dst]+"';"
+        dest_fk = lostQuery(facility)
+        preexisting = "SELECT convoy_pk from convoys where request='"+line[request]+"';"
+        convoy_pk = lostQuery(preexisting)
+        if not (convoy_pk):
+            insertNew = "INSERT INTO convoys(request, source_fk, dest_fk, depart_dt, arrive_dt) VALUES ('"+line[request]+"', '"+source_fk+"', '"+dest_fk+"', '"+line[depart]+"', '"+line[arrive]+"');"
             inserted = lostQuery(insertNew)
             if not (inserted): print("Error, "+line+" not inserted into convoys")
 
 def used_byInsert(lines):
-    #Find relevant data
+    #Find relevant data`
     for i in range(len(lines[0])):
         if lines[0][i] == 'transport request #': request = i
         if lines[0][i] == 'assigned vehicles': vehicles = i
-    for line in lines(:1):
+    for line in lines[:1]:
         #Check convoy is not already inserted
         for vehicle in line[vehicles]:
             preexisting = "SELECT asset_pk from assets where asset_tag='"+vehicle+"';"
@@ -173,12 +195,83 @@ def used_byInsert(lines):
             convoy_fk = lostQuery(preexisting)
             preexisting = "SELECT convoy_fk from used_by where vehicle_fk='"+vehicle_fk+"';"
             exists = lostQuery(preexisting)
-            if not (exists)
+            if not (exists):
                 insertNew = "INSERT INTO used_by(vehicle_fk, convoy_fk) VALUES ('"+vehicle_fk+"', '"+convoy_fk+"');"
                 inserted = lostQuery(insertNew)
                 if not (inserted): print("Error, "+vehicle_fk+" not inserted into used_by")
 
-def asset_on(lines):
+def asset_onInsert(lines):
+    #Find relevant data
+    for i in range(len(lines[0])):
+        if lines[0][i] == 'asset tag': tag = i
+        if lines[0][i] == 'transport request #': request = i
+        if lines[0][i] == 'depart date': depart = i
+        if lines[0][i] == 'arrive date': arrive = i
+    for line in lines[:1]:
+        for asset in line[tag]:
+            preexisting = "SELECT asset_pk from assets where asset_tag='"+asset+"';"
+            asset_fk = lostQuery(preexisting)
+            preexisting = "SELECT convoy_pk from convoys where request='"+line[request]+"';"
+            convoy_fk = lostQuery(preexisting)
+            preexisting = "SELECT convoy_fk from asset_on where asset_fk='"+asset_fk+"';"
+            exists = lostQuery(preexisting)
+            if not (exists):
+                insertNew = "INSERT INTO asset_on(asset_fk, convoy_fk, load_dt, unload_dt) VALUES ('"+asset_fk+"', '"+convoy_fk+"', '"+line[depart]+"', '"+line[arrive]+"');"
+                inserted = lostQuery(insertNew)
+                if not (inserted): print("Error, "+asset_fk+" not inserted into asset_on")
+
+def levelsInsert(lines):
+    #Find relevant data
+    for i in range(len(lines[0])):
+        if lines[0][i] == 'level': level = i
+        if lines[0][i] == 'description': desc = i
+    for line in lines[:1]:
+        preexisting = "SELECT level_pk from levels where abbrv='"+line[level]+"';"
+        exists = lostQuery(preexisting)
+        if not (exists):
+            insertNew = "INSERT INTO levels(abbrv, comments) VALUES ('"+line[level]+"', '"+line[desc]+"');"
+            inserted = lostQuery(insertNew)
+            if not (inserted): print("Error, "+line[level]+" not inserted into levels")
+
+def compartmentsInsert(lines):
+    #Find relevant data
+    for i in range(len(lines[0])):
+        if lines[0][i] == 'compartment_tag': abbrv = i
+        if lines[0][i] == 'compartment_desc': desc = i
+    for line in lines[:1]:
+        preexisting = "SELECT compartment_pk from compartments where abbrv='"+line[abbrv]+"';"
+        exists = lostQuery(preexisting)
+        if not (exists):
+            insertNew = "INSERT INTO compartments(abbrv, comments) VALUES ('"+line[abbrv]+"', '"+line[desc]+"');"
+            inserted = lostQuery(insertNew)
+            if not (inserted): print("Error, "+line[abbrv]+" not inserted into compartments")
+
+def security_tagsInsert(lines):
+    #Find relevant data
+    for i in range(len(lines[0])):
+        if lines[0][i] == 'compartments': comp = i
+        if lines[0][i] == 'asset tag': asset = i
+    for line in lines[:1]:
+        line[comp] = line[comp].split(':')
+        compartment = line[comp][0]
+        level = line[comp][1]
+        preexisting = "SELECT level_pk from levels where abbrv='"+level+"';"
+        level_fk = lostQuery(preexisting)
+        preexisting = "SELECT compartment_pk from compartments where abbrv='"+compartment+"';"
+        compartment_fk = lostQuery(preexisting)
+        preexisting = "SELECT asset_pk from assets where asset_tag='"+line[asset]+"';"
+        asset_fk = lostQuery(preexisting)
+        preexisting = "SELECT product_fk from assets where asset_tag='"+line[asset]+"';"
+        product_fk = lostQuery(preexisting)
+        preexisting = "SELECT tag_pk from security_tags where asset_fk='"+asset_fk+"';"
+        exists = lostQuery(preexisting)
+        if not (exists):
+            insertNew = "INSERT INTO compartments(level_fk, compartments_fk, product_fk, asset_fk) VALUES ('"+level_fk+"', '"+compartment_fk+"', '"+product_fk+"', '"+asset_fk+"');"
+            inserted = lostQuery(insertNew)
+            if not (inserted): print("Error, "+asset_fk+" not inserted into security tags")
+
+
+            
 
 
 
@@ -189,16 +282,16 @@ def updateTables(legacy):
     return {
         'acquisitions': [],
         'convoy':       [False, False, True, False, False, False, True, False, False, False, False, False, False, False, False],
-        'DC_inventory': [],
-        'HQ_inventory': [],
-        'MB005_inventory': [],
-        'NC_inventory': [],
+        'DC_inventory': [False, True, False, False, True, False, False, False, False, False, False, False, False, False, True],
+        'HQ_inventory': [False, True, False, False, True, False, False, False, False, False, False, False, False, False, True],
+        'MB005_inventory': [False, True, False, False, True, False, False, False, False, False, False, False, False, False, True],
+        'NC_inventory': [False, True, False, False, True, False, False, False, False, False, False, False, False, False, True],
         'product_list': [True, False, False, False, False, False, False, False, False, False, False, False, False, False, False],
         'README':       [False, False, False, False, False, False, False, False, False, False, False, False, False, False, False],
-        'security_compartments': [],
-        'security_levels': [],
-        'SPNV_inventory': [],
-        'transit'       : [],
+        'security_compartments': [False, False, False, False, False, False, False, False, False, False, False, False, False, True, False],
+        'security_levels': [False, False, False, False, False, False, False, False, False, False, False, False, True, False, False],
+        'SPNV_inventory': [False, True, False, False, True, False, False, False, False, False, False, False, False, False, True],
+        'transit'       : [False, False, False, False, False, True, False, True, False, False, False, False, False, False, False],
         'vendors'       : [],
     }[legacy]
 
