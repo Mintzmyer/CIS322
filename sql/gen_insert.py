@@ -1,13 +1,10 @@
 # Credit to stackoverflow for python syntax
 import os.path
-import psycopg
+import psycopg2
 
-files = os.listdir(os.path.expanduser('~')+'/osnap_legacy')
-for file in files:
-    parseFile(file)
 
 def lostQuery(sqlQuery):
-    conn = psycopg.conn("lost")
+    conn = psycopg2.connect("dbname=lost user=osnapdev")
     cur = conn.cursor()
     result = cur.exec(sqlQuery)
     return result
@@ -327,6 +324,9 @@ def callInsert(tables, legacy, lines):
     if tables[14] == True:
         security_tagsInsert(lines)
  
+files = os.listdir(os.path.expanduser('~')+'/osnap_legacy')
+for file in files:
+    parseFile(os.path.expanduser('~')+'/osnap_legacy/'+file)
 # Parse lines
 # Grab elements of array line to generate sql statements
 # Print SQL statement to insert.sql
