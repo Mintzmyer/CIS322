@@ -28,6 +28,13 @@ def reportfilter():
         return render_template('index.html', report=request.form['report'], assetsIn=request.form['assetIn'])
     return render_template('reportfilter.html')
 
+@app.route('/facilityreport')
+def facilityreport():
+    return render_template('facilityreport.html')
+
+@app.route('/transitreport')
+def transitreport():
+    return render_template('transitreport.html')
 
 #@app.route('/goodbye')
 #def goodbye();
