@@ -1,0 +1,22 @@
+<html>
+	<body><h2>Generate Inventory Report</h2>
+		<p1>Something about reports...</p1><br />
+		<form action="{{url_for('index')}}">
+			<input type="radio" name='report' value='facility'/> Facility 
+			<select>
+				<option value=''>None</option>
+				<option value='Facility1'>Facility1</option>
+				<option value='Facility2'>Facility2</option>
+			</select>
+			<br />
+			<input type="radio" name='report' value='transit'/> Transit
+			<select>
+				<option value=''>None</option>
+				<option value='Transport1'>Transport1</option>
+				<option value='Transport2'>Transport2</option>
+			</select>
+			<br />
+			<input type="submit" value='Generate Report' name='Generate' />
+		</form>
+	</body>
+</html>
