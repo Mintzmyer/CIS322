@@ -1,5 +1,11 @@
 <html>
-	<body><h2>Transit: </h2>
+	<body>
+		<div align="right">
+			<form action="{{url_for('logout')}}">
+				<input type="submit" value='Logout' name='logout' />
+			</form>
+		</div>
+		<h2>Transit: </h2>
 		<table style="width:100%">
 			<tr>
 				<th>Asset Tag</ th>

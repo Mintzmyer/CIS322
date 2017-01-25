@@ -1,10 +1,11 @@
 <html>
-	<body><h2>Please Login</h2><p1>Welcome to L.O.S.T. web application. Please
-		<br />enter your username and password:</p1>
+	<body><h2>Please Login</h2><p1>Welcome to L.O.S.T. web application. Please enter your username and password:</p1>
+		<br />
 		<form action="{{url_for('welcome')}}">
-			<input type="text" name="username" />
-			<input type="text" name="password" />
-			<input type="submit" name="submit" />
+			<input type="text" placeholder='Enter Username' name="username" required/>
+			<input type="password" placeholder='Enter Password' name="password" required/>
+			<br />
+			<input type="submit" value='Login' name="submit" />
 		</form>
 	</body>
 </html>

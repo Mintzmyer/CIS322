@@ -1,19 +1,31 @@
 <html>
-	<body><h2>Generate Inventory Report</h2>
+	<body>
+		<div align="right">
+			<form action="{{url_for('logout')}}">
+				<input type="submit" value='Logout' name='logout' />
+			</form>
+		</div>
+		<h2>Generate Inventory Report</h2>
 		<p1>Something about reports...</p1><br />
-		<form action="{{url_for('index')}}">
-			<input type="radio" name='report' value='facility'/> Facility 
-			<select>
-				<option value=''>None</option>
-				<option value='Facility1'>Facility1</option>
-				<option value='Facility2'>Facility2</option>
+		<form action="{{url_for('genReport')}}" method="POST">
+			<input type="radio" name='report' value='facilityreport'/> Facility 
+			<select name='facilities'>
+				<option name = assetIn value=''>None</option>
+				{% for facility in facilities_list %}
+					{% for fac in facility %}
+					<option value="{{fac}}" SELECTED>{{fac}}</option>
+					{% endfor %}
+				{% endfor %}
 			</select>
 			<br />
-			<input type="radio" name='report' value='transit'/> Transit
-			<select>
-				<option value=''>None</option>
-				<option value='Transport1'>Transport1</option>
-				<option value='Transport2'>Transport2</option>
+			<input type="radio" name='report' value='transitreport'/> Transit
+			<select name='convoys'>
+				<option name = assetIn value=''>None</option>
+				{% for convoy in convoys_list %}
+					{% for con in convoy %}
+					<option value="{{con}}" SELECTED>{{con}}</option>
+					{% endfor %}
+				{% endfor %}
 			</select>
 			<br />
 			<input type="submit" value='Generate Report' name='Generate' />
