@@ -1,8 +1,8 @@
 <html>
 	<body>
 		<div align="right">
-			<form action="{{url_for('logout')}}">
-				<input type="submit" value='Logout' name='logout' />
+			<form name = 'logout' action="{{url_for('logout')}}">
+				<input type="submit" value='Logout {{uname}}' name='logout' />
 			</form>
 		</div>
 		<h2>Generate Inventory Report</h2>
@@ -10,21 +10,15 @@
 		<form action="{{url_for('genReport')}}" method="POST">
 			<input type="radio" name='report' value='facilityreport'/> Facility 
 			<select name='facilities'>
-				<option name = assetIn value=''>None</option>
 				{% for facility in facilities_list %}
-					{% for fac in facility %}
-					<option value="{{fac}}" SELECTED>{{fac}}</option>
-					{% endfor %}
+					<option name='assetAt' value="{{facility[0]}}" SELECTED>{{facility[1]}}</option>
 				{% endfor %}
 			</select>
 			<br />
 			<input type="radio" name='report' value='transitreport'/> Transit
 			<select name='convoys'>
-				<option name = assetIn value=''>None</option>
 				{% for convoy in convoys_list %}
-					{% for con in convoy %}
-					<option value="{{con}}" SELECTED>{{con}}</option>
-					{% endfor %}
+					<option name='assetOn' value="{{convoy[0]}}" SELECTED>{{convoy[1]}}</option>
 				{% endfor %}
 			</select>
 			<br />

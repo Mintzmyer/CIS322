@@ -1,5 +1,20 @@
 from flask import Flask, render_template, request, redirect, url_for, session
 import psycopg2
+from picklesession import PickleSessionInterface
+import os
+
+global SECRET_KEY
+
+SECRET_KEY = 'a0z987asdf'
+
+app = Flask(__name__)
+app.secret_key = SECRET_KEY
+
+path='/dev/shm/lost_sessions'
+if not os.path.exists(path):
+    os.mkdir(path)
+    os.chmod(path, int('700',8))
+app.session_interface=PickleSessionInterface(path)
 
 def lostQuery(sqlQuery):
     conn = psycopg2.connect("dbname='lost' user='osnapdev' host='127.0.0.1'")
@@ -18,67 +33,81 @@ def lostQuery(sqlQuery):
     conn.close()
     return result
 
-app = Flask(__name__)
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    return redirect(url_for('login'))
 
-@app.route('/welcome')
-def welcome():
-    return render_template('welcome.html')
 
-@app.route('/login')
+@app.route('/login', methods=['GET', 'POST'])
 def login():
-    if request.method=='GET' and 'username' and 'login' in request.args:
-        return render_template('welcome.html', user=request.args.get('username'), password=request.args.get('password'))
-
-    if request.method=='POST' and 'username' and 'login' in request.form:
-        return render_template('welcome.html', user=request.form['username'])
     return render_template('login.html')
 
 @app.route('/reportfilter', methods=['GET', 'POST'])
 def reportfilter():
     facilities=['']
     convoys=['']
-    sqlFacilities="SELECT common_name from facilities;"
-    sqlConvoys="SELECT request from convoys"
+    uname=''
+    sqlFacilities="SELECT facility_pk, common_name from facilities;"
+    sqlConvoys="SELECT convoy_pk, request from convoys;"
     facilities=lostQuery(sqlFacilities)
     convoys=lostQuery(sqlConvoys)
-#    if request.method=='GET' and 'report' and 'assetIn' in request.form:
-#        return render_template('index.html', report=request.args.get('report'), assetsIn=request.args.get('assetIn'))
-#    if request.method=='GET' in request.form:
-#        reportType='facilityreport'
-#        report=request.args.get['report']
-#        return redirect(url_for('genReport', reportType=report)) #, asset=assetsIn))
 
-    if request.method=='POST': # and 'report' in request.form:
-        if form.validate() == True:
-            reportType=request.form['report']
-            session['reportType']=reportType
-            return redirect(url_for('genReport', reportType=reportType)) #, asset=assetsIn))
-        else:
-            return render_template('reportfilter.html')
-       # assetsIn=request.form['assetIn']
-    return render_template('reportfilter.html')
+    if request.method=='POST':
+        session['user']=request.form.get('username')
+        session['password']=request.form.get('password')
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    return render_template('reportfilter.html', facilities_list=facilities, convoys_list=convoys, uname=session['user'])
 
 @app.route('/report', methods=['GET', 'POST'])
 def genReport(): #, asset):
-    reportType=session['reportType']
-    #reportType=request.args['reportType']
-    return render_template('facilityreport.html')
-    #return render_template(url_for(reportType))
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    if request.method=='POST': # and 'report' in request.form:
+        reportType=request.form.get('report')
+        assetAt=request.form.get('facilities')
+        assetOn=request.form.get('convoys')
+        session['reportType']=reportType
+        session['assetAt']=assetAt
+        session['assetOn']=assetOn
+    if 'reportType' in session:
+        #return render_template('report.html', assetAt=session['assetAt'], assetOn=session['assetOn'], rType=session['reportType'])
+        reportType=session['reportType']
+    else:
+        reportType='reportfilter'
+    return redirect(url_for(reportType))
 
 @app.route('/facilityreport')
 def facilityreport():
-    return render_template('facilityreport.html')
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    facility_fk=session['assetAt']
+#    sqlFacility="SELECT facility_pk from facilities where common_name='"+facility+"';"
+#    facility_fk=lostQuery(sqlFacility)
+    sqlAssets="SELECT assets.asset_tag, asset_at.arrive_dt, asset_at.depart_dt from assets join asset_at on assets.asset_pk=asset_at.asset_fk where facility_fk='"+facility_fk+"';"
+    assets=lostQuery(sqlAssets)
+    return render_template('facilityreport.html', asset_list=assets, uname=session['user'])
 
 @app.route('/transitreport')
 def transitreport():
-    redir='logout'
-    return render_template('transitreport.html')
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    convoy_fk=str(session['assetOn'])
+    sqlAssets="select a.asset_tag, ao.load_dt, f1.common_name, ao.unload_dt, f2.common_name from assets as a inner join asset_on as ao on a.asset_pk=ao.asset_fk inner join convoys as c on ao.convoy_fk=c.convoy_pk inner join facilities as f1 on c.source_fk=f1.facility_pk inner join facilities as f2 on c.dest_fk=f2.facility_pk where ao.convoy_fk='"+convoy_fk+"';"
+    assets=lostQuery(sqlAssets)
+    return render_template('transitreport.html', asset_list=assets, uname=session['user'])
 
 @app.route('/logout')
 def logout():
-    return render_template('logout.html')
-
+    if 'user' not in session:
+        return redirect(url_for('login'))
+    #if request.method=='POST':
+    goodbye=session['user']
+    SECRET_KEY = 'a0z987asdf'+session['user']
+    app.secret_key = SECRET_KEY
+    session.pop('password', None)
+    session.pop('user', None)
+    session.clear()
+    session.modified=True
+    return render_template('logout.html', uname=goodbye)

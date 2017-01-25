@@ -2,7 +2,7 @@
 	<body>
 		<div align="right">
 			<form action="{{url_for('logout')}}">
-				<input type="submit" value='Logout' name='logout' />
+				<input type="submit" value='Logout {{uname}}' name='logout' />
 			</form>
 		</div>
 		<h2>Transit: </h2>
@@ -14,6 +14,16 @@
 				<th>Arrive Date</ th>
 				<th>to Facility</ th>
 			</tr>
+			{% for asset_line in asset_list %}
+			<tr>
+				{% for data in asset_line %}
+				<th>{{data}}</ th>
+				{%endfor %}
+			</tr>
+			{% endfor %}
 		</table>
+		<form action="{{url_for('reportfilter')}}">
+			<input type="submit" value='New Report' name='return' />
+		</form>
 	</body>
 </html>
