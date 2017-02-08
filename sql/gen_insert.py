@@ -181,6 +181,7 @@ def convoysInsert(lines):
     print("Request:"+str(request)+" Depart: "+str(depart)+" Arrive: "+str(arrive))
     #Check convoy is not already inserted
     for line in lines[1:]:
+        #//count if string contains "
         facility = "SELECT facility_pk from facilities where common_name~'"+str(line[src]).replace('\"','')+"';"
         source_fk = lostQuery(facility)[0][0]
         facility = "SELECT facility_pk from facilities where common_name~'"+str(line[dst]).replace('\"','')+"';"

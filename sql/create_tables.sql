@@ -12,7 +12,7 @@ DROP TABLE if exists vehicles;
 CREATE TABLE vehicles ( vehicles_pk serial PRIMARY KEY, asset_fk integer);
 
 DROP TABLE if exists facilities;
-CREATE TABLE facilities ( facility_pk serial PRIMARY KEY, facility_fk integer, fcode varchar(10), common_name varchar(25), location varchar(25));
+CREATE TABLE facilities ( facility_pk serial PRIMARY KEY, fcode varchar(10), common_name varchar(25), location varchar(25));
 	
 DROP TABLE if exists asset_at;
 CREATE TABLE asset_at ( asset_fk integer, facility_fk integer, arrive_dt timestamp, depart_dt timestamp);
