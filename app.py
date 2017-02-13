@@ -3,6 +3,8 @@ import psycopg2
 from picklesession import PickleSessionInterface
 import os
 import json
+import datetime
+
 
 global SECRET_KEY
 
@@ -16,6 +18,9 @@ if not os.path.exists(path):
     os.mkdir(path)
     os.chmod(path, int('700',8))
 app.session_interface=PickleSessionInterface(path)
+
+def now():
+    return datetime.datetime.now(datetime.timezone.utc)
 
 def lostQuery(sqlQuery):
     conn = psycopg2.connect("dbname='lost' user='osnapdev' host='127.0.0.1'")
@@ -34,77 +39,146 @@ def lostQuery(sqlQuery):
     conn.close()
     return result
 
-@app.route('/rest/lost_key')
+@app.route('/rest')
+def rest():
+    return render_template('rest.html')
+
+@app.route('/rest/lost_key', methods=['POST'])
 def lost_key():
     if request.method=='POST' and 'arguments' in request.form:
-        req-json.loads(request.form['arguments'])
+        try:
+            req=json.loads(request.form['arguments'])
+        except:
+            req = dict()
+            req['timestamp']="2017-02-02 06:15:13"
 
     dat = dict()
     dat['timestamp']=req['timestamp']
+    # Query DB for timestamp =>result='OK'
+    #else: result='FAIL'
     dat['result']='OK'
+    dat['key']='bksaoudu......aoelchsauh'
     data = json.dumps(dat)
 
-    return render_template('api.dat.html', data=data)
+    #return render_template('api_dat.html', data=data)
+    return data
 
-@app.route('/rest/activate_user')
+@app.route('/rest/activate_user', methods=['GET', 'POST'])
 def activate_user():
     if request.method=='POST' and 'arguments' in request.form:
-        req-json.loads(request.form['arguments'])
+        req=json.loads(request.form['arguments'])
+        user=req['username']
+    else:
+        req = dict()
+        req['timestamp']="2017-02-02 06:15:13"
+        
 
     dat = dict()
     dat['timestamp']=req['timestamp']
+    # Query DB for existing user -> activate =>result='OK'
+    # else: add new user -> activate =>result='NEW'
+    # else: result='FAIL'
     dat['result']='OK'
     data = json.dumps(dat)
 
-    return render_template('api.dat.html', data=data)
+    #return render_template('api_dat.html', data=data)
+    return data
 
-@app.route('/rest/suspend_user')
+@app.route('/rest/suspend_user', methods=['GET', 'POST'])
 def suspend_user():
     if request.method=='POST' and 'arguments' in request.form:
-        req-json.loads(request.form['arguments'])
+        req=json.loads(request.form['arguments'])
+        user = req['username']
+    else:
+        req = dict()
+        req['timestamp']="2017-02-02 06:15:13"
 
     dat = dict()
     dat['timestamp']=req['timestamp']
+    # Query DB for existing user->suspend=>result='OK'
     dat['result']='OK'
     data = json.dumps(dat)
 
-    return render_template('api.dat.html', data=data)
+    #return render_template('api_dat.html', data=data)
+    return data
 
-@app.route('/rest/list_products')
+@app.route('/rest/list_products', methods=['GET', 'POST'])
 def list_products():
     if request.method=='POST' and 'arguments' in request.form:
-        req-json.loads(request.form['arguments'])
+        req=json.loads(request.form['arguments'])
+        vend=req['vendor']
+        desc=req['description']
+        compart=req['compartments']
+    else:
+        req = dict()
+        req['timestamp']="2017-02-02 06:15:13"
+    # Query DB for existing products and sort returned info
+    product1 = dict()
+    product1['vendor']="Dunder Mifflin"
+    product1['description']="LOST legal size notepad"
+    product1['compartments']= []
+    product2 = dict()
+    product2['vendor']="big n large"
+    product2['description']="LOST legal size notepad"
+    product2['compartments']=[]
+    prodlist = [product1, product2]
 
     dat = dict()
+    dat['listing']=prodlist
     dat['timestamp']=req['timestamp']
     dat['result']='OK'
     data = json.dumps(dat)
 
-    return render_template('api.dat.html', data=data)
+    #return render_template('api_dat.html', data=data)
+    return data
 
-@app.route('/rest/add_products')
+@app.route('/rest/add_products', methods=['GET', 'POST'])
 def add_products():
     if request.method=='POST' and 'arguments' in request.form:
-        req-json.loads(request.form['arguments'])
+        req=json.loads(request.form['arguments'])
+        products=req['new_products']
+    else:
+        req = dict()
+        req['timestamp']="2017-02-02 06:15:13"
+
+    #vendor/description/alt_description/compartments
 
     dat = dict()
     dat['timestamp']=req['timestamp']
+    # Check list for product duplicates, fail if exists
+    # Query DB for each product, fail if one already exists
+    # else: insert products
+
     dat['result']='OK'
     data = json.dumps(dat)
 
-    return render_template('api.dat.html', data=data)
+    #return render_template('api_dat.html', data=data)
+    return data
 
-@app.route('/rest/add_asset')
+@app.route('/rest/add_asset', methods=['GET', 'POST'])
 def add_asset():
     if request.method=='POST' and 'arguments' in request.form:
-        req-json.loads(request.form['arguments'])
+        req=json.loads(request.form['arguments'])
+        vend=req['vendor']
+        desc=req['description']
+        compart=req['compartments']
+        fac=req['facility']
+    else:
+        req = dict()
+        req['timestamp']="2017-02-02 06:15:13"
+
 
     dat = dict()
     dat['timestamp']=req['timestamp']
+    # Check DB if asset already exists
+    # elif insert asset 
+    # else: fail
+
     dat['result']='OK'
     data = json.dumps(dat)
 
-    return render_template('api.dat.html', data=data)
+    #return render_template('api_dat.html', data=data)
+    return data
 
 
 @app.route('/')

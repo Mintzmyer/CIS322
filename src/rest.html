@@ -3,11 +3,101 @@
 	<h3>Available Service Calls:</h3>
 	<body>
 		-lost_key
+		</br>
+		Request -
+		</br>
+		The request does not provide values for any of the arguments though the data and
+		signature fields must be present in the request.
+		</br>
+		Response -
+		</br>
+		result ‘OK’ or ‘FAIL’
+		</br>
+		key The LOST public key
+		</br>
+		</br>
 		-activate_user
+		</br>
+		Reactivates LOST access for a user or generates a new user account if needed.
+		</br>
+		Request -
+		</br>
+		username OSNAP username to activate
+		</br>
+		Response -
+		</br>
+		result ‘OK’, ‘NEW’, or ‘FAIL’
+		</br>
+		</br>
 		-suspend_user
+		</br>
+		Revokes access for a user. If the user does not exist or access has already been revoked,
+		this call has no effect.
+		</br>
+		Request -
+		</br>
+		username OSNAP username to revoke
+		</br>
+		Response -
+		</br>
+		result ‘OK’
+		</br>
+		</br>
 		-list_products
+		</br>
+		Requests a listing of all products in LOST based on a filter criteria. Additional filters may
+		be provided and additional data may be returned. The requests of the minimum form
+		documented in the example must be accepted and the produced result must have at least
+		the structure and fields of example provided. Asset information may not be provided by
+		this call (e.g. no returning number of assets that are of product types).
+		</br>
+		Request -
+		</br>
+		vendor Case insensitive string to match against vendor name
+		</br>
+		description Case insensitive string to match against product description
+		</br>
+		compartments Security tags for the asset as a json array, all tags must be matched for
+		compartment and level.
+		</br>
+		Response -
+		</br>
+		listing a json list containing the product information entries
+		</br>
+		</br>
 		-add_products
+		</br>
+		Adds products to LOST. Requests should be atomic (all products are added or no products
+		are added) and attempting to add a duplicate product should cause the request
+		to fail. A product is duplicated if at the end of the call the database would have two
+		products with the same vendor and description.
+		</br>
+		Request -
+		</br>
+		new products a json list describing the new products
+		</br>
+		Response -
+		</br>
+		result ‘OK’, or ‘FAIL’
+		</br>
+		</br>
 		-add_asset
+		</br>
+		Adds a new asset to LOST.
+		</br>
+		Request -
+		</br>
+		vendor Vendor of the product
+		</br>
+		description Description of the product
+		</br>
+		compartments Additional compartments the asset should be classified under
+		facility Facility code the asset is initially housed at
+		</br>
+		Response -
+		</br>
+		result ‘OK’, or ‘FAIL’
+		</br>
 
 	</body>
 </html>
