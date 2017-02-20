@@ -6,5 +6,7 @@ CREATE DATABASE lost
 
 -- Wipe table clean, create user tables
 DROP TABLE if exists users;
--- serialized pk for continuity with username change, max username and password length is 16 chars
-CREATE TABLE users ( user_pk serial PRIMARY KEY, username varchar(16), password(16));
+
+-- serialized pk for continuity with username change 
+-- max username and password length is 16 chars, +1 for null char
+CREATE TABLE users ( user_pk serial PRIMARY KEY, username varchar(17), password(17));
