@@ -105,4 +105,6 @@ def create_user():
 def dashboard():
     return render_template('dashboard.html', username=session['user'])
 
-    
+@app.route('/logout')
+def logout():
+    return redirect(url_for('login'))

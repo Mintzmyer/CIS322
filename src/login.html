@@ -1,11 +1,26 @@
 <html>
-	<body><h2>Please Login</h2><p1>Welcome to L.O.S.T. web application. Please enter your username and password:</p1>
-		<br />
+	<body>
+		<h2>Please Login</h2>
+		<div align="right">
+			<form name = 'logout' action="{{url_for('logout')}}">
+				<input type="submit" value='Logout {{uname}}' name='logout' />
+			</form>
+		</div>
+		<p1>Welcome to L.O.S.T. web application. Please enter your username and password:</p1>
+
 		<form name='login' action="{{url_for('login')}}" method='POST'>
 			<input type="text" placeholder='Enter Username' name="username" required/>
 			<input type="password" placeholder='Enter Password' name="password" required/>
 			<br />
 			<input type="submit" value='Login' name="submit" />
+		</form>
+
+		<br />
+		<br />
+		<br />
+		<br />
+		<form name = 'create_user' action="{{url_for('create_user')}}">
+			<input type="submit" value='Register a New User' name='create_user' />
 		</form>
 	</body>
 </html>

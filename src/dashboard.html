@@ -1,5 +1,10 @@
 <html>
 	<body><h1>Welcome to the LOST Web Application</h1>
+		<div align="right">
+			<form name = 'logout' action="{{url_for('logout')}}">
+				<input type="submit" value='Logout {{uname}}' name='logout' />
+			</form>
+		</div>
 		<br />
 		Your username is {{username}}
 	</body>
