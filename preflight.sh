@@ -11,5 +11,8 @@ psql $1 -f create_tables.sql
 cd ..
 
 #Install the wsgi files
-cp -R src/* $HOME/wsgi
+cp -R src/*.py $HOME/wsgi/
+cp -R src/*.html $HOME/wsgi/templates/
+
+apachectl restart
 
