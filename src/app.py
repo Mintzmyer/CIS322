@@ -46,8 +46,29 @@ def login():
     if request.method=='GET':
         return render_template('login.html')
     
-    if request.method=='POST':
-        #Call DB
+    if request.method=='POST' and 'username' and 'password' in request.form:
+        username=request.form.get('username')
+        password=request.form.get('password')
+
+        #Check login credentials
+        sqlUser="SELECT user_pk from users where username='"+username+"';"
+        userPk=lostQuery(sqlUser)
+
+        #If username doesn't exist, report that
+        if not (userPk):
+            session['user']="not registered"
+
+        #If username exists, check password
+        else:
+            sqlPassword="SELECT user_pk from users where username='"+username+"' and password='"+password+"';"
+            login=lostQuery(sqlPassword)
+            
+            #If login fails, report wrong password. Otherwise, report username
+            if not (login):
+                session['user']="associated with a different password"
+            else:
+                session['user']=username
+
         return redirect(url_for('dashboard'))
 
 @app.route('/create_user', methods=['GET', 'POST'])
@@ -56,7 +77,7 @@ def create_user():
         return render_template('create_user.html')
     
     if request.method=='POST' and 'username' and 'password' in request.form:
-        user=request.form.get('user')
+        username=request.form.get('username')
         password=request.form.get('password')
 
         #Check DB for existing user
@@ -66,14 +87,16 @@ def create_user():
         #If user does not exist, insert submitted data into users table
         if not (userPk):
             sqlNewUser="INSERT INTO users(username, password) VALUES ('"+username+"', '"+password+"');"
-            userPk=lostQuery(sqlNewUser)    
+            lostQuery(sqlNewUser)    
+            sqlUser="SELECT user_pk from users where username='"+username+"';"
+            userPk=str(lostQuery(sqlUser)[0][0])
             #Query new submission for session username
-            sqlUsername="SELECT username from users where userPk='"+userPk+"';"
-            session['user']=lostQuery(sqlUsername)
+            sqlUsername="SELECT username from users where user_Pk='"+userPk+"';"
+            session['user']=str(lostQuery(sqlUsername)[0][0])
         
         #If user already exists, report that.
         else:
-            session['user']=" already exists."
+            session['user']="already registered."
 
         #Redirect to dashboard where the username is proudly displayed
         return redirect(url_for('dashboard'))
