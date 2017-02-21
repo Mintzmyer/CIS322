@@ -14,4 +14,4 @@ cd ..
 cp -R src/*.py $HOME/wsgi/
 cp -R src/*.html $HOME/wsgi/templates/
 
-
+apachectl restart
