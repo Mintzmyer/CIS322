@@ -74,11 +74,14 @@ def login():
 @app.route('/create_user', methods=['GET', 'POST'])
 def create_user():
     if request.method=='GET':
-        return render_template('create_user.html')
+        sqlRoles="SELECT role_pk, title from roles;"
+        roles_list=lostQuery(sqlRoles)
+        return render_template('create_user.html', roles_list=roles_list)
     
     if request.method=='POST' and 'username' and 'password' in request.form:
         username=request.form.get('username')
         password=request.form.get('password')
+        role=request.form.get('role')
 
         #Check DB for existing user
         sqlUser="SELECT user_pk from users where username='"+username+"';"
@@ -86,7 +89,7 @@ def create_user():
         
         #If user does not exist, insert submitted data into users table
         if not (userPk):
-            sqlNewUser="INSERT INTO users(username, password) VALUES ('"+username+"', '"+password+"');"
+            sqlNewUser="INSERT INTO users(username, password, role_fk) VALUES ('"+username+"', '"+password+"', '"+role+"');"
             lostQuery(sqlNewUser)    
             sqlUser="SELECT user_pk from users where username='"+username+"';"
             userPk=str(lostQuery(sqlUser)[0][0])

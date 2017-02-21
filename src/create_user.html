@@ -11,6 +11,12 @@
 		<form name='create_user' action="{{url_for('create_user')}}" method='POST'>
 			<input type="text" placeholder='Enter Username' name="username" required/>
 			<input type="password" placeholder='Enter Password' name="password" required/>
+			<select name='role'>
+				{% for role in roles_list %}
+					<option name='role' value='{{role[0]}}' SELECTED>{{role[1]}}</option>
+				{% endfor %}
+			</select>
+			<br />
 			<br />
 			<input type="submit" value='Register' name="submit" />
 		</form>
