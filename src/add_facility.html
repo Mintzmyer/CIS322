@@ -1,0 +1,31 @@
+<html>
+	<h1> Add Facility Interface </h1>
+	<body>
+		<h2>Facility: </h2>
+		<table style="width:100%">
+			<tr>
+				<th>Facility Name</ th>
+				<th>Facility Code</ th>
+			</tr>
+			{% for facility in facilities_list %}
+			<tr>
+				{% for data in facility %}
+				<th>{{data}}</ th>
+				{% endfor %}
+			</tr>
+			{% endfor %}
+		</table>
+		<br />
+		{{add_message}}
+		<br />
+		<form name='new_facility' action="{{url_for('add_facility')}}" method='POST'>
+			<input type="text" placeholder='Facility Name' name='fname' maxlength="32" required/>
+			<input type="text" placeholder='Facility Code' name='fcode' maxlength="6" required/>
+			<br />
+			<input type="submit" value="Add Facility" name="submit" />
+		</form>
+	</body>
+</html>
+
+
+

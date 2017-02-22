@@ -104,6 +104,66 @@ def create_user():
         #Redirect to dashboard where the username is proudly displayed
         return redirect(url_for('dashboard'))
 
+@app.route('/add_facility', methods=['GET', 'POST'])
+def add_facility():
+    sqlFacilities=("SELECT name, code FROM facilities")
+    if request.method=='GET':
+        msg="Ready to add a facility"
+        facilities_list=lostQuery(sqlFacilities)
+        return render_template('add_facility.html', facilities_list=facilities_list, add_message=msg)
+
+    if request.method=='POST':
+        fname=request.form.get('fname')
+        fcode=request.form.get('fcode')
+        sqlFName="SELECT facility_pk FROM facilities where name='"+fname+"';"
+        nameTaken=lostQuery(sqlFName)
+        if not (nameTaken):
+            sqlFCode="SELECT facility_pk FROM facilities where code='"+fcode+"';"
+            codeTaken=lostQuery(sqlFCode)
+            if not (codeTaken):
+                sqlNewf="INSERT INTO facilities(name, code) VALUES ('"+fname+"', '"+fcode+"');"
+                lostQuery(sqlNewf)
+                msg="Facility successfuly added"
+            else:
+                msg="A facility already has that code"
+        else:
+            msg="A facility already has that name"
+        facilities_list=lostQuery(sqlFacilities)
+        return render_template('add_facility.html', facilities_list=facilities_list, add_message=msg)
+
+@app.route('/add_asset', methods=['GET', 'POST'])
+def add_asset():
+    sqlFacilities=("SELECT facility_pk, name FROM facilities")
+    sqlAssets=("SELECT a.tag, a.description, f.name from assets as a inner join asset_location as ao on a.asset_pk=ao.asset_fk inner join facilities as f on ao.facility_fk=f.facility_pk")
+    facilities_list=lostQuery(sqlFacilities)
+    
+    if request.method=='GET':
+        msg="Ready to add an asset"
+        assets_list=lostQuery(sqlAssets)
+        return render_template('add_asset.html', assets_list=assets_list, facilities_list=facilities_list)
+
+    if request.method=='POST':
+        atag=request.form.get('atag')
+        adescription=request.form.get('adesc')
+        arrival=request.form.get('arrival')
+        facility=request.form.get('facilities')
+        sqlAtag="SELECT asset_pk FROM assets where tag='"+atag+"';"
+        tagTaken=lostQuery(sqlAtag)
+        if not (tagTaken):
+            sqlNewa="INSERT INTO assets(tag, description) VALUES ('"+atag+"', '"+adescription+"');"
+            lostQuery(sqlNewa)
+            sqlApk="SELECT asset_pk from assets where tag='"+atag+"';"
+            asset_pk=lostQuery(sqlApk)
+            sqlNewLocation="INSERT INTO asset_location(asset_fk, facility_fk, arrival) VALUES ('"+str(asset_pk[0][0])+"', '"+str(facility)+"', '"+str(arrival)+"');"
+            lostQuery(sqlNewLocation)
+            msg="Asset successfully added"
+        else:
+            msg="A asset already has that tag"
+        assets_list=lostQuery(sqlAssets)
+        return render_template('add_asset.html', assets_list=assets_list, facilities_list=facilities_list)
+
+
+
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
     return render_template('dashboard.html', username=session['user'])
