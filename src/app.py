@@ -68,6 +68,8 @@ def login():
                 session['user']="associated with a different password"
             else:
                 session['user']=username
+                #sqlRole="SELECT role from users where user_pk='"%s"';"
+                #session['role']=lostQuery(sqlRole,(userPk))
 
         return redirect(url_for('dashboard'))
 
@@ -96,6 +98,7 @@ def create_user():
             #Query new submission for session username
             sqlUsername="SELECT username from users where user_Pk='"+userPk+"';"
             session['user']=str(lostQuery(sqlUsername)[0][0])
+            #session['role']=role
         
         #If user already exists, report that.
         else:
@@ -162,11 +165,30 @@ def add_asset():
         assets_list=lostQuery(sqlAssets)
         return render_template('add_asset.html', assets_list=assets_list, facilities_list=facilities_list)
 
+@app.route('/dispose_asset', methods=['GET', 'POST'])
+def dispose_asset():
+    sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.name='%s';"
+    role=lostQuery(sqlRole,(session[user]))
+    if not (role="Logisticcs Officer"):
+        msg="required to have the role of Logistics Officer to dispose of assets"
+        return render_template('dashboard.html', usermsg=msg)
+    if request.method=='GET':
+        msg="User cleared to register dispose assets"
+        return render_template('dispose_asset.html', dispose_msg=msg)
+    if request.method=='POST':
+        atag=request.form.get('atag')
+        sqlLocate="SELECT facility_fk from assets where tag='%s';"
+        location=lostQuery(sqlLocate, (atag))
+        if not (location):
+            msg="There is no asset that matches that tag"
+        else:
+            sqlTrash="SELECT f.code from facility as f inner join asset_location where asset_fk='%s';"
+
 
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
-    return render_template('dashboard.html', username=session['user'])
+    return render_template('dashboard.html', usermsg=session['user'])
 
 @app.route('/logout')
 def logout():

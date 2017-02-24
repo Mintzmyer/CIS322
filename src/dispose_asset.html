@@ -1,0 +1,17 @@
+<html>
+	<h1> Dispose Asset Interface </h1>
+	<body>
+		<h2>Assets: </h2>
+		<br />
+		{{dispose_msg}}
+		<br />
+		<form name='used_asset' action="{{url_for('dispose_asset')}}" method='POST'>
+			<input type="text" placeholder='Asset Tag' name='atag' maxlength="16" required/>
+			<br />
+			<input type="submit" value="Add Asset" name="submit" />
+		</form>
+	</body>
+</html>
+
+
+
