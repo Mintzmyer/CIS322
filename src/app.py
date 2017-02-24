@@ -169,7 +169,7 @@ def add_asset():
 def dispose_asset():
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.name='%s';"
     role=lostQuery(sqlRole,(session[user]))
-    if not (role="Logisticcs Officer"):
+    if not (role="Logistics Officer"):
         msg="required to have the role of Logistics Officer to dispose of assets"
         return render_template('dashboard.html', usermsg=msg)
     if request.method=='GET':
@@ -177,12 +177,22 @@ def dispose_asset():
         return render_template('dispose_asset.html', dispose_msg=msg)
     if request.method=='POST':
         atag=request.form.get('atag')
-        sqlLocate="SELECT facility_fk from assets where tag='%s';"
-        location=lostQuery(sqlLocate, (atag))
+        sqlExist="SELECT asset_pk from assets where tag='%s';"
+        assetPk=lostQuery(sqlExist, (atag))
         if not (location):
             msg="There is no asset that matches that tag"
         else:
-            sqlTrash="SELECT f.code from facility as f inner join asset_location where asset_fk='%s';"
+            sqlTrash="SELECT al.arrival from asset_location as al inner join facility as f on f.facility_pk=ao.facility_fk where al.asset_fk='%s' and f.code='Trash';"
+            #sqlLocate="SELECT f.code from facility as f inner join asset_location as ao on f.facility_pk=ao.facility_fk where ao.asset_fk='%s' and f.code='Trash';"
+            disposed=lostQuery(sqlTrash, (assetPk))
+            if (disposed):
+                msg="That asset has already been disposed of"
+            else: 
+                now = CurrentDate()
+                sqlDispose="INSERT INTO asset_location(asset_fk, facility_fk, arrival) select %s, facility_pk from facilities where facilities.code='Trash', %s;"
+                lostQuery(sqlDispose, (assetPk, now))
+                msg="Asset listed as disposed"
+        return render_template('dispose_asset.html', dispose_msg=msg)
 
 
 
