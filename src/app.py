@@ -20,18 +20,21 @@ if not os.path.exists(path):
     os.chmod(path, int('700',8))
 app.session_interface=PickleSessionInterface(path)
 
-def lostQuery(sqlQuery):
+def lostQuery(sqlQuery, params):
     conn = psycopg2.connect("dbname='lost' user='osnapdev' host='127.0.0.1'")
     #print("conn:"+str(conn))
     cur = conn.cursor()
     #print("cur:"+str(cur))
-    print(sqlQuery)
-    cur.execute(sqlQuery)
+    #print(sqlQuery)
+    if not (params):
+        cur.execute(sqlQuery)
+    else:
+        cur.execute(sqlQuery, params)
     try:
         result = cur.fetchall()
     except psycopg2.ProgrammingError:
         result = ''
-    print("Result:"+str(result))
+    #print("Result:"+str(result))
     conn.commit()
     cur.close()
     conn.close()
