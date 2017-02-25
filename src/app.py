@@ -178,8 +178,10 @@ def dispose_asset():
     if request.method=='GET':
         msg="User cleared to register dispose assets"
         return render_template('dispose_asset.html', dispose_msg=msg)
+
     if request.method=='POST':
         atag=request.form.get('atag')
+        dday=request.form.get('disposedday')
         sqlExist="SELECT asset_pk from assets where tag=%s;"
         assetPk=lostQuery(sqlExist, (atag,))
         if not (assetPk):
@@ -191,9 +193,8 @@ def dispose_asset():
             if (disposed):
                 msg="That asset has already been disposed of"
             else: 
-                now = "1991-03-08" ## CurrentDate()
                 sqlDispose="INSERT INTO asset_location(asset_fk, arrival, facility_fk) select %s, %s, facility_pk from facilities where facilities.code='Trash';"
-                lostQuery(sqlDispose, (assetPk[0][0], now))
+                lostQuery(sqlDispose, (assetPk[0][0], dday))
                 msg="Asset listed as disposed"
         return render_template('dispose_asset.html', dispose_msg=msg)
 
