@@ -170,9 +170,9 @@ def add_asset():
 
 @app.route('/dispose_asset', methods=['GET', 'POST'])
 def dispose_asset():
-    sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.name='%s';"
-    role=lostQuery(sqlRole,(session[user]))
-    if not (role=="Logistics Officer"):
+    sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
+    role=lostQuery(sqlRole,(session['user'],))
+    if not (role[0][0]=="Logistics Officer"):
         msg="required to have the role of Logistics Officer to dispose of assets"
         return render_template('dashboard.html', usermsg=msg)
     if request.method=='GET':
@@ -180,20 +180,20 @@ def dispose_asset():
         return render_template('dispose_asset.html', dispose_msg=msg)
     if request.method=='POST':
         atag=request.form.get('atag')
-        sqlExist="SELECT asset_pk from assets where tag='%s';"
-        assetPk=lostQuery(sqlExist, (atag))
-        if not (location):
+        sqlExist="SELECT asset_pk from assets where tag=%s;"
+        assetPk=lostQuery(sqlExist, (atag,))
+        if not (assetPk):
             msg="There is no asset that matches that tag"
         else:
-            sqlTrash="SELECT al.arrival from asset_location as al inner join facility as f on f.facility_pk=ao.facility_fk where al.asset_fk='%s' and f.code='Trash';"
+            sqlTrash="SELECT al.arrival from asset_location as al inner join facilities as f on f.facility_pk=al.facility_fk where al.asset_fk=%s and f.code='Trash';"
             #sqlLocate="SELECT f.code from facility as f inner join asset_location as ao on f.facility_pk=ao.facility_fk where ao.asset_fk='%s' and f.code='Trash';"
-            disposed=lostQuery(sqlTrash, (assetPk))
+            disposed=lostQuery(sqlTrash, (assetPk[0][0],))
             if (disposed):
                 msg="That asset has already been disposed of"
             else: 
-                now = CurrentDate()
-                sqlDispose="INSERT INTO asset_location(asset_fk, facility_fk, arrival) select %s, facility_pk from facilities where facilities.code='Trash', %s;"
-                lostQuery(sqlDispose, (assetPk, now))
+                now = "1991-03-08" ## CurrentDate()
+                sqlDispose="INSERT INTO asset_location(asset_fk, arrival, facility_fk) select %s, %s, facility_pk from facilities where facilities.code='Trash';"
+                lostQuery(sqlDispose, (assetPk[0][0], now))
                 msg="Asset listed as disposed"
         return render_template('dispose_asset.html', dispose_msg=msg)
 
