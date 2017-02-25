@@ -8,6 +8,8 @@ fi
 # Set up the database tables
 cd sql
 psql $1 -f create_tables.sql
+# JUST FOR TESTING remove before submission!!!
+psql $1 -f testvalues.sql
 cd ..
 
 #Install the wsgi files

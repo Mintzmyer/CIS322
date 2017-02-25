@@ -27,7 +27,7 @@ CREATE TABLE assets (asset_pk serial PRIMARY KEY, tag varchar(16), description v
 -- Remove/create facilities table
 DROP TABLE if exists facilities;
 CREATE TABLE facilities (facility_pk serial PRIMARY KEY, name varchar(32), code varchar(6));
-INSERT INTO facilities (name, code) VALUES ('Disposed', 'Trash')
+INSERT INTO facilities (name, code) VALUES ('Disposed', 'Trash');
 
 -- Remove/create asset_location table
 DROP TABLE if exists asset_location;

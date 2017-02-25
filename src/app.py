@@ -54,8 +54,8 @@ def login():
         password=request.form.get('password')
 
         #Check login credentials
-        sqlUser="SELECT user_pk from users where username='"+username+"';"
-        userPk=lostQuery(sqlUser)
+        sqlUser="SELECT user_pk from users where username=%s;"
+        userPk=lostQuery(sqlUser, (username,))
 
         #If username doesn't exist, report that
         if not (userPk):
@@ -63,8 +63,8 @@ def login():
 
         #If username exists, check password
         else:
-            sqlPassword="SELECT user_pk from users where username='"+username+"' and password='"+password+"';"
-            login=lostQuery(sqlPassword)
+            sqlPassword="SELECT user_pk from users where username=%s and password=%s;"
+            login=lostQuery(sqlPassword, (username, password))
             
             #If login fails, report wrong password. Otherwise, report username
             if not (login):
@@ -141,11 +141,11 @@ def add_facility():
 def add_asset():
     sqlFacilities=("SELECT facility_pk, name FROM facilities")
     sqlAssets=("SELECT a.tag, a.description, f.name from assets as a inner join asset_location as ao on a.asset_pk=ao.asset_fk inner join facilities as f on ao.facility_fk=f.facility_pk")
-    facilities_list=lostQuery(sqlFacilities)
+    facilities_list=lostQuery(sqlFacilities, None)
     
     if request.method=='GET':
         msg="Ready to add an asset"
-        assets_list=lostQuery(sqlAssets)
+        assets_list=lostQuery(sqlAssets, None)
         return render_template('add_asset.html', assets_list=assets_list, facilities_list=facilities_list)
 
     if request.method=='POST':
@@ -153,26 +153,26 @@ def add_asset():
         adescription=request.form.get('adesc')
         arrival=request.form.get('arrival')
         facility=request.form.get('facilities')
-        sqlAtag="SELECT asset_pk FROM assets where tag='"+atag+"';"
-        tagTaken=lostQuery(sqlAtag)
+        sqlAtag="SELECT asset_pk FROM assets where tag=%s;"
+        tagTaken=lostQuery(sqlAtag, (atag,))
         if not (tagTaken):
-            sqlNewa="INSERT INTO assets(tag, description) VALUES ('"+atag+"', '"+adescription+"');"
-            lostQuery(sqlNewa)
-            sqlApk="SELECT asset_pk from assets where tag='"+atag+"';"
-            asset_pk=lostQuery(sqlApk)
-            sqlNewLocation="INSERT INTO asset_location(asset_fk, facility_fk, arrival) VALUES ('"+str(asset_pk[0][0])+"', '"+str(facility)+"', '"+str(arrival)+"');"
-            lostQuery(sqlNewLocation)
+            sqlNewa="INSERT INTO assets(tag, description) VALUES (%s, %s);"
+            lostQuery(sqlNewa, (atag, adescription))
+            sqlApk="SELECT asset_pk from assets where tag=%s;"
+            asset_pk=lostQuery(sqlApk, (atag,))
+            sqlNewLocation="INSERT INTO asset_location(asset_fk, facility_fk, arrival) VALUES (%s, %s, %s);"
+            lostQuery(sqlNewLocation, (str(asset_pk[0][0]), str(facility), str(arrival)))
             msg="Asset successfully added"
         else:
             msg="A asset already has that tag"
-        assets_list=lostQuery(sqlAssets)
+        assets_list=lostQuery(sqlAssets, None)
         return render_template('add_asset.html', assets_list=assets_list, facilities_list=facilities_list)
 
 @app.route('/dispose_asset', methods=['GET', 'POST'])
 def dispose_asset():
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.name='%s';"
     role=lostQuery(sqlRole,(session[user]))
-    if not (role="Logistics Officer"):
+    if not (role=="Logistics Officer"):
         msg="required to have the role of Logistics Officer to dispose of assets"
         return render_template('dashboard.html', usermsg=msg)
     if request.method=='GET':
