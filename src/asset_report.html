@@ -3,7 +3,7 @@
 		<h2>Report Generate Interface</h2>
 		<p1>{{report_msg}}</p1>
 		<form action="{{url_for('asset_report')}}" method="POST">
-			<select name='facilities'>
+			<select name='facility'>
 				<option name='facility' value="0" SELECTED>All</option>
 				{% for facility in facilities_list %}
 					<option name='facility' value="{{facility[0]}}" SELECTED>{{facility[1]}}</option>
@@ -18,7 +18,8 @@
 				<th>Asset Tag</ th>
 				<th>Description</ th>
 				<th>Facility</ th>
-				<th>Date</ th>
+				<th>Arrival Date</ th>
+				<th>Departure Date</ th>
 			</tr>
 			{% for line in report_list %}
 			<tr>

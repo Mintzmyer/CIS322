@@ -115,26 +115,26 @@ def add_facility():
     sqlFacilities=("SELECT name, code FROM facilities")
     if request.method=='GET':
         msg="Ready to add a facility"
-        facilities_list=lostQuery(sqlFacilities)
+        facilities_list=lostQuery(sqlFacilities, None)
         return render_template('add_facility.html', facilities_list=facilities_list, add_message=msg)
 
     if request.method=='POST':
         fname=request.form.get('fname')
         fcode=request.form.get('fcode')
-        sqlFName="SELECT facility_pk FROM facilities where name='"+fname+"';"
-        nameTaken=lostQuery(sqlFName)
+        sqlFName="SELECT facility_pk FROM facilities where name=%s;"
+        nameTaken=lostQuery(sqlFName, (fname,))
         if not (nameTaken):
-            sqlFCode="SELECT facility_pk FROM facilities where code='"+fcode+"';"
-            codeTaken=lostQuery(sqlFCode)
+            sqlFCode="SELECT facility_pk FROM facilities where code=%s;"
+            codeTaken=lostQuery(sqlFCode, (fcode,))
             if not (codeTaken):
-                sqlNewf="INSERT INTO facilities(name, code) VALUES ('"+fname+"', '"+fcode+"');"
-                lostQuery(sqlNewf)
+                sqlNewf="INSERT INTO facilities(name, code) VALUES (%s, %s);"
+                lostQuery(sqlNewf, (fname, fcode))
                 msg="Facility successfuly added"
             else:
                 msg="A facility already has that code"
         else:
             msg="A facility already has that name"
-        facilities_list=lostQuery(sqlFacilities)
+        facilities_list=lostQuery(sqlFacilities, None)
         return render_template('add_facility.html', facilities_list=facilities_list, add_message=msg)
 
 @app.route('/add_asset', methods=['GET', 'POST'])
@@ -146,7 +146,7 @@ def add_asset():
     if request.method=='GET':
         msg="Ready to add an asset"
         assets_list=lostQuery(sqlAssets, None)
-        return render_template('add_asset.html', assets_list=assets_list, facilities_list=facilities_list)
+        return render_template('add_asset.html', add_message=msg, assets_list=assets_list, facilities_list=facilities_list)
 
     if request.method=='POST':
         atag=request.form.get('atag')
@@ -166,12 +166,15 @@ def add_asset():
         else:
             msg="A asset already has that tag"
         assets_list=lostQuery(sqlAssets, None)
-        return render_template('add_asset.html', assets_list=assets_list, facilities_list=facilities_list)
+        return render_template('add_asset.html', add_message=msg, assets_list=assets_list, facilities_list=facilities_list)
 
 @app.route('/dispose_asset', methods=['GET', 'POST'])
 def dispose_asset():
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))
+    if not (role):
+        msg="required to dispose of assets"
+        return render_template('dashboard.html', usermsg=msg)
     if not (role[0][0]=="Logistics Officer"):
         msg="required to have the role of Logistics Officer to dispose of assets"
         return render_template('dashboard.html', usermsg=msg)
@@ -197,7 +200,7 @@ def dispose_asset():
                 lostQuery(sqlDeparture, (dday, assetPk[0][0]))
                 sqlDispose="INSERT INTO asset_location(asset_fk, arrival, facility_fk) select %s, %s, facility_pk from facilities where facilities.code='Trash';"
                 lostQuery(sqlDispose, (assetPk[0][0], dday))
-                msg="Asset listed as disposed"
+                msg="Asset successfully listed as disposed"
         return render_template('dispose_asset.html', dispose_msg=msg)
 
 @app.route('/asset_report', methods=['GET', 'POST'])
@@ -206,15 +209,16 @@ def asset_report():
     facilities_list=lostQuery(sqlFacilities, None)
     if request.method=='GET':
         msg="You may specify which day and any (or all) facility:"
-        return render_template('asset_report.html', report_msg=msg, facilities_list=facilities_list, report_list=None)
+        blank=iter([])
+        return render_template('asset_report.html', report_msg=msg, facilities_list=facilities_list, report_list=blank)
     if request.method=='POST':
         facility=request.form.get('facility')
         day=request.form.get('reportday')
         if (facility=='0'):
-            sqlReport="SELECT a.tag, a.description, f.name, al.arrival from asset as a inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where arrival<%s and departure>%s or departure is NULL;"
-            report_list=lostQuery(sqlReport, (facility, day, day))
+            sqlReport="SELECT a.tag, a.description, f.name, al.arrival, al.departure from assets as a inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where al.arrival<=%s and (al.departure>=%s or al.departure is NULL);"
+            report_list=lostQuery(sqlReport, (day, day))
         else:
-            sqlReport="SELECT a.tag, a.description, f.name, al.arrival from asset as a inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where facility_pk=%s and arrival<%s and departure>%s or depture is NULL"
+            sqlReport="SELECT a.tag, a.description, f.name, al.arrival, al.departure from assets as a inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where facility_pk=%s and al.arrival<=%s and (al.departure>=%s or al.departure is NULL)"
             report_list=lostQuery(sqlReport, (facility, day, day))
         msg="Report generated:"
         return render_template('asset_report.html', report_msg=msg, facilities_list=facilities_list, report_list=report_list)
