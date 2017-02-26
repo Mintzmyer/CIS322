@@ -1,0 +1,33 @@
+<html>
+	<body>
+		<h2>Report Generate Interface</h2>
+		<p1>{{report_msg}}</p1>
+		<form action="{{url_for('asset_report')}}" method="POST">
+			<select name='facilities'>
+				<option name='facility' value="0" SELECTED>All</option>
+				{% for facility in facilities_list %}
+					<option name='facility' value="{{facility[0]}}" SELECTED>{{facility[1]}}</option>
+				{% endfor %}
+			</select>
+			<input type="date" name='reportday' required/>
+			<br />
+			<input type="submit" value="Generate Report" name="submit" />
+		</form>
+		<table style="width:100%">
+			<tr>
+				<th>Asset Tag</ th>
+				<th>Description</ th>
+				<th>Facility</ th>
+				<th>Date</ th>
+			</tr>
+			{% for line in report_list %}
+			<tr>
+				{% for value in line %}
+				<th>{{value}}</ th>
+				{% endfor %}
+			</tr>
+			{% endfor %}
+		</table>
+	</body>
+</html>
+

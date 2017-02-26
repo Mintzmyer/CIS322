@@ -80,7 +80,7 @@ def login():
 def create_user():
     if request.method=='GET':
         sqlRoles="SELECT role_pk, title from roles;"
-        roles_list=lostQuery(sqlRoles)
+        roles_list=lostQuery(sqlRoles, None)
         return render_template('create_user.html', roles_list=roles_list)
     
     if request.method=='POST' and 'username' and 'password' in request.form:
@@ -89,18 +89,18 @@ def create_user():
         role=request.form.get('role')
 
         #Check DB for existing user
-        sqlUser="SELECT user_pk from users where username='"+username+"';"
-        userPk=lostQuery(sqlUser)
+        sqlUser="SELECT user_pk from users where username=%s;"
+        userPk=lostQuery(sqlUser, (username,))
         
         #If user does not exist, insert submitted data into users table
         if not (userPk):
-            sqlNewUser="INSERT INTO users(username, password, role_fk) VALUES ('"+username+"', '"+password+"', '"+role+"');"
-            lostQuery(sqlNewUser)    
-            sqlUser="SELECT user_pk from users where username='"+username+"';"
-            userPk=str(lostQuery(sqlUser)[0][0])
+            sqlNewUser="INSERT INTO users(username, password, role_fk) VALUES (%s, %s, %s);"
+            lostQuery(sqlNewUser, (username, password, role))    
+            sqlUser="SELECT user_pk from users where username=%s;"
+            userPk=str(lostQuery(sqlUser, (username,))[0][0])
             #Query new submission for session username
-            sqlUsername="SELECT username from users where user_Pk='"+userPk+"';"
-            session['user']=str(lostQuery(sqlUsername)[0][0])
+            sqlUsername="SELECT username from users where user_Pk=%s;"
+            session['user']=str(lostQuery(sqlUsername, (userPk,))[0][0])
             #session['role']=role
         
         #If user already exists, report that.
@@ -192,13 +192,32 @@ def dispose_asset():
             disposed=lostQuery(sqlTrash, (assetPk[0][0],))
             if (disposed):
                 msg="That asset has already been disposed of"
-            else: 
+            else:
+                sqlDeparture="UPDATE asset_location set departure=%s where departure is NULL and asset_fk=%s"
+                lostQuery(sqlDeparture, (dday, assetPk[0][0]))
                 sqlDispose="INSERT INTO asset_location(asset_fk, arrival, facility_fk) select %s, %s, facility_pk from facilities where facilities.code='Trash';"
                 lostQuery(sqlDispose, (assetPk[0][0], dday))
                 msg="Asset listed as disposed"
         return render_template('dispose_asset.html', dispose_msg=msg)
 
-
+@app.route('/asset_report', methods=['GET', 'POST'])
+def asset_report():
+    sqlFacilities=("SELECT facility_pk, name FROM facilities")
+    facilities_list=lostQuery(sqlFacilities, None)
+    if request.method=='GET':
+        msg="You may specify which day and any (or all) facility:"
+        return render_template('asset_report.html', report_msg=msg, facilities_list=facilities_list, report_list=None)
+    if request.method=='POST':
+        facility=request.form.get('facility')
+        day=request.form.get('reportday')
+        if (facility=='0'):
+            sqlReport="SELECT a.tag, a.description, f.name, al.arrival from asset as a inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where arrival<%s and departure>%s or departure is NULL;"
+            report_list=lostQuery(sqlReport, (facility, day, day))
+        else:
+            sqlReport="SELECT a.tag, a.description, f.name, al.arrival from asset as a inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where facility_pk=%s and arrival<%s and departure>%s or depture is NULL"
+            report_list=lostQuery(sqlReport, (facility, day, day))
+        msg="Report generated:"
+        return render_template('asset_report.html', report_msg=msg, facilities_list=facilities_list, report_list=report_list)
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():

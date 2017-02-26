@@ -32,4 +32,4 @@ INSERT INTO facilities (name, code) VALUES ('Disposed', 'Trash');
 -- Remove/create asset_location table
 DROP TABLE if exists asset_location;
 -- Create relational table for assets and their location (facility)
-CREATE TABLE asset_location (asset_fk integer, facility_fk integer, arrival date);
+CREATE TABLE asset_location (asset_fk integer, facility_fk integer, arrival date, departure date);
