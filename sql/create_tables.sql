@@ -1,9 +1,3 @@
--- Wipe slate clean, create LOST and connect
-DROP DATABASE if exists lost;
-CREATE DATABASE lost
-	WITH OWNER osnapdev;
-\connect lost
-
 -- Wipe table clean, create user tables
 DROP TABLE if exists users;
 
