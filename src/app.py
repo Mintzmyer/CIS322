@@ -223,10 +223,70 @@ def asset_report():
         msg="Report generated:"
         return render_template('asset_report.html', report_msg=msg, facilities_list=facilities_list, report_list=report_list)
 
+@app.route('/transfer_req', methods=['GET', 'POST'])
+def transfer_req():
+    # Check user is a logistics officer
+    if request.method=='GET':
+        # Get facilities
+        return render_template('transfer_req.html', facility_list=facilities, req_msg=msg)
+    if request.method=='POST':
+        atag=request.form.get('tag')
+        source=request.form.get('source')
+        destination=request.form.get('destination')
+        # Check asset tag exists
+        sqlAssetExists="SELECT facility_fk FROM assets where tag=%s"
+        location=lostQuery(sqlAssetExists, (atag,))
+        if not (location==source):
+            msg="No such asset tag at that source facility"
+        else:
+            #Insert request into DB
+            msg="Asset request successfully submitted"
+        return render_template('transfer_req.html', facility_list=facilities, req_msg=msg)
+
+@app.route('/approve_req', methods=['GET', 'POST'])
+def approve_req():
+    # Check user is a facilities officer
+    if request.method=='GET':
+        # Check if there exists a matching request that has not yet been approved
+        return render_template('approve_req.html', approve_msg=msg)
+    if request.method=='POST':
+        approved=request.form.get('approval')
+        if not (approved):
+            # Remove request or mark rejected
+            msg="Transfer request rejected"
+            return redirect(url_for('dashboard'), usermsg=msg)
+        else:
+            # Mark request approved
+            # Insert asset in transit data
+            msg="Transfer request approved"
+            return redirect(url_for('dashboard'), usermsg=msg)
+
+@app.route('/update_transit', methods=['GET', 'POST'])
+def update_transit():
+    # Check if user is a logistics officer
+    if request.method=='GET':
+        # Check if there exists a matching transit without a load/unload time
+        return render_template('update_transit.html', update_msg=msg)
+    if request.method=='POST':
+        # Update load or unload times
+        msg="Transit request updated"
+        return redirect(url_for('dashboard'), usermsg=msg)
+
+@app.route('/transfer_report', methods=['GET', 'POST'])
+def transfer_report():
+    if request.method=='GET':
+        msg="Please enter the date for assets in transit"
+        return render_template('transfer_report.html', transfer_msg=msg)
+    if request.method=='POST':
+        date=request.form.get('date')
+        # SELECT asset tag, load time, unload time of all assets load time <= date <= unload time
+        # If unload time is null, that's ok. If load time is null, can't determine
+
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
     return render_template('dashboard.html', usermsg=session['user'])
 
 @app.route('/logout')
 def logout():
+    session['user']=""
     return redirect(url_for('login'))
