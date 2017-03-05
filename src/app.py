@@ -258,7 +258,7 @@ def transfer_req():
             #Insert request into DB
             sqlUser="SELECT user_pk from users where username=%s;"
             userPk=lostQuery(sqlUser, (session['user'],))
-            sqlRequest="INSERT INTO transfer_request (requester_fk, time_requested) OUTPUT  VALUES (%s, CURRENT_DATE);"
+            sqlRequest="INSERT INTO transfer_request (requester_fk, date_requested) OUTPUT  VALUES (%s, CURRENT_DATE);"
             lostQuery(sqlRequest, (userPk,))
             sqlRequestPk="SELECT currval(pg_get_serial_sequence('transfer_request', 'request_pk'));"
             requestPk=lostQuery(sqlRequestPK, (None,))
@@ -283,23 +283,38 @@ def approve_req():
     
     if request.method=='GET':
         # Check if there exists a matching request that has not yet been approved
-        return render_template('approve_req.html', approve_msg=session['msg'])
+        requestPk=request.args['request_pk']
+        headers=[('Transit ID'), ('Asset Tag'), ('Source Facilitiy'), ('Destination Facility'), ('Request Date')]
+        sqlRequests="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_requested FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_at as at on a.asset_pk=at.asset_fk inner join facilities as f on at.facility_fk=f.facility_pk where tr.request_pk=%s and (tr.approver_fk is NULL and tr.date_approved is NULL);" # My gosh it's hideous what have I done
+        requestData=lostQuery(sqlRequests, (requestPk,))
+        if not (requestData):
+            session['msg']="No further action required"
+            return redirect(url_for('dashboard'))
+        session['msg']="Please review the transfer request and approve or reject it"
+        return render_template('approve_req.html', approve_msg=session['msg'], requestPk=requestPk, tableheader=headers, request=requestData)
     if request.method=='POST':
-        approved=request.form.get('approval')
+        approved=request.form.get('Decision')
+        requestPk=request.form.get('requestPk')
         if not (approved):
-            # Remove request or mark rejected
+            # Remove request or mark rejecteda
+            sqlReject="DELETE FROM transfer_request where request_id=%s"
+            lostQuery(sqlReject, (requestPk,))
             session['msg']="Transfer request rejected"
             return redirect(url_for('dashboard'), usermsg=session['msg'])
         else:
             # Mark request approved
             # Insert asset in transit data
+            sqlUser="SELECT user_pk from users where username=%s;"
+            userPk=lostQuery(sqlUser, (username,))
+            sqlApprove="UPDATE transfer_request set approver_fk=%s, date_approved=CURRENT_DATE;"
+            lostQuery(sqlApprove, (userPk,))
             session['msg']="Transfer request approved"
             return redirect(url_for('dashboard'), usermsg=session['msg'])
 
 @app.route('/update_transit', methods=['GET', 'POST'])
 def update_transit():
     # Check if user is a logistics officer
-     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
+    sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))
     if not (role):
         session['msg']="required to dispose of assets"
@@ -310,11 +325,24 @@ def update_transit():
     
     if request.method=='GET':
         # Check if there exists a matching transit without a load/unload time
-        return render_template('update_transit.html', update_msg=session['msg'])
+        requestPk=request.args['request_pk']
+        headers=[('Transit ID'), ('Asset Tag'), ('Source Facilitiy'), ('Destination Facility'), ('Request Date')]
+        sqlRequests="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_requested FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_at as at on a.asset_pk=at.asset_fk inner join facilities as f on at.facility_fk=f.facility_pk where tr.request_pk=%s and (tr.approver_fk is not NULL and ((atr.load is NULL or atr.unload is NULL) or (atr.load is NULL and atr.unload is NULL)));" # My gosh it's hideous what have I done
+        requestData=lostQuery(sqlRequests, (requestPk,))
+        if not (requestData):
+            session['msg']="No further action required"
+            return redirect(url_for('dashboard'))
+        session['msg']="Please enter the dates to load and unload the asset"
+        return render_template('update_transit.html', update_msg=session['msg'], tableheader=headers, request=requestData, request_fk=requestPk)
     if request.method=='POST':
         # Update load or unload times
+        requestPk=request.form.get('submit')
+        load=request.form.get('load')
+        unload=request.form.get('unload')
+        sqlSchedule="UPDATE asset_transfers SET load=%s, unload=%s where request_fk=%s;"
+        lostQuery(sqlSchedule, (load, unload, requestPk))
         session['msg']="Transit request updated"
-        return redirect(url_for('dashboard'), usermsg=session['msg'])
+        return redirect(url_for('dashboard'))
 
 @app.route('/transfer_report', methods=['GET', 'POST'])
 def transfer_report():
@@ -326,8 +354,8 @@ def transfer_report():
         date=request.form.get('date')
         headers=[('Asset Tag'), ('Load Time'), ('Unload Time')]
         # SELECT asset tag, load time, unload time of all assets load time <= date <= unload time
+        sqlReport="SELECT a.tag, atr.load, atr.unload from asset_transfers as atr inner join assets as a on atr.asset_fk=a.asset_pk where atr.load <= %s and (atr.unload >= %s or atr.unload is NULL);"
         # If unload time is null, that's ok. If load time is null, can't determine
-        sqlReport=""
         report=lostQuery(sqlReport, (date, date))
         session['msg']="Report generated"
         return render_template('transfer_report.html', transfer_msg=session['msg'], tableheader=headers, report_list=report);
@@ -335,9 +363,22 @@ def transfer_report():
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
     # Get role
-    # Get tasks appropriate to role: If Facilities Officer, approve transit requests, Logistics Officer Tracking
-    blank=iter([])
-    return render_template('dashboard.html', usermsg=session['msg'], tableheader=blank, todo_list=blank)
+    sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
+    role=lostQuery(sqlRole,(session['user'],))[0][0]
+    # Get tasks appropriate to role: 
+    # If Logistics Officer, add transit tracking
+    if (role=="Logistics Officer"):
+        headers=[('Transit ID'), ('Asset Tag'), ('Source Facilitiy'), ('Destination Facility'), ('Approval Date')]
+        sqlTracking="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_approved FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_at as at on a.asset_pk=at.asset_fk inner join facilities as f on at.facility_fk=f.facility_pk where (atr.load is NULL or atr.unload is NULL);" # My gosh it's hideous what have I done
+        todo=lostQuery(sqlRequests, (None,))
+
+    # If Facilities Officer, approve transit requests, 
+    if (role=="Facilities Officer"):
+        headers=[('Transit ID'), ('Asset Tag'), ('Source Facilitiy'), ('Destination Facility'), ('Request Date')]
+        sqlRequests="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_requested FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_at as at on a.asset_pk=at.asset_fk inner join facilities as f on at.facility_fk=f.facility_pk where (tr.approver_fk is NULL and tr.date_approved is NULL);" # My gosh it's hideous what have I done
+        todo=lostQuery(sqlRequests, (None,))
+
+    return render_template('dashboard.html', usermsg=session['msg'], tableheader=headers, todo_list=todo)
 
 @app.route('/logout')
 def logout():

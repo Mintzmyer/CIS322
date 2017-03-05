@@ -1,0 +1,27 @@
+<html>
+	<h1> Approve Transit Interface </h1>
+	<body>
+		{{approve_msg}}
+		<br />
+		<table style="width:100%">
+			<tr>
+				{% for head in tableheader %}
+				<th>{{head}}</ th>
+				{% endfor %}
+			</tr>
+			<tr>
+				{% for detail in request %}
+				<th>{{value}}</ th>
+				{% endfor %}
+			</tr>
+		</table>
+		<form name='approve_req' action="{{url_for('approve_req')}}" method='POST'>
+			<input type="hidden" name="requestPk" value={{request_pk}} />
+			<input type="submit" value="Approve" name="Decision" />
+			<input type="submit" value="Reject" name="Decision" />
+		</form>
+	</body>
+</html>
+
+
+

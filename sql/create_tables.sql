@@ -33,7 +33,7 @@ DROP TABLE if exists transfer_request;
 -- Create table for transfer requests
 -- Grouped data on larger request here
 -- Mostly logical/beaurocratic process for overall 'Shipment Order'
-CREATE TABLE transfer_request (request_pk serial PRIMARY KEY, requester_fk integer, time_requested date, approver_fk integer, time_approved date);
+CREATE TABLE transfer_request (request_pk serial PRIMARY KEY, requester_fk integer, date_requested date, approver_fk integer, date_approved date);
 
 -- Remove/create asset_transfers table
 DROP TABLE if exists asset_transfers;

@@ -1,0 +1,27 @@
+<html>
+	<h1> Update Transit Interface </h1>
+	<body>
+		{{update_msg}}
+		<br />
+		<table style="width:100%">
+			<tr>
+				{% for head in tableheader %}
+				<th>{{head}}</ th>
+				{% endfor %}
+			</tr>
+			<tr>
+				{% for detail in request %}
+				<th>{{value}}</ th>
+				{% endfor %}
+			</tr>
+		</table>
+		<form name='update_transit' action="{{url_for('update_transit')}}" method='POST'>
+			<input type="date" name='load'>Load
+			<input type="date" name='unload'>Unload
+			<input type="submit" value="{{request_pk}}" name="Schedule" />
+		</form>
+	</body>
+</html>
+
+
+
