@@ -47,7 +47,8 @@ def index():
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method=='GET':
-        return render_template('login.html')
+        session['msg']="Please enter your username and password"
+        return render_template('login.html', login_msg=session['msg'])
     
     if request.method=='POST' and 'username' and 'password' in request.form:
         username=request.form.get('username')
@@ -59,7 +60,8 @@ def login():
 
         #If username doesn't exist, report that
         if not (userPk):
-            session['user']="not registered"
+            session['msg']="Username is not registered"
+            return render_template('login.html', login_msg=session['msg'])
 
         #If username exists, check password
         else:
@@ -68,7 +70,8 @@ def login():
             
             #If login fails, report wrong password. Otherwise, report username
             if not (login):
-                session['user']="associated with a different password"
+                session['msg']="Username associated with a different password"
+                return render_template('login.html', login_msg=session['msg'])
             else:
                 session['user']=username
                 #sqlRole="SELECT role from users where user_pk='"%s"';"
@@ -78,10 +81,11 @@ def login():
 
 @app.route('/create_user', methods=['GET', 'POST'])
 def create_user():
+    sqlRoles="SELECT role_pk, title from roles;"
+    roles_list=lostQuery(sqlRoles, None)
     if request.method=='GET':
-        sqlRoles="SELECT role_pk, title from roles;"
-        roles_list=lostQuery(sqlRoles, None)
-        return render_template('create_user.html', roles_list=roles_list)
+        session['msg']="Please create your username and password:"
+        return render_template('create_user.html', roles_list=roles_list, create_msg=session['msg'])
     
     if request.method=='POST' and 'username' and 'password' in request.form:
         username=request.form.get('username')
@@ -105,7 +109,8 @@ def create_user():
         
         #If user already exists, report that.
         else:
-            session['user']="already registered."
+            session['msg']="Username already registered."
+            return render_template('create_user.html', roles_list=roles_list, create_msg=session['msg'])
 
         #Redirect to dashboard where the username is proudly displayed
         return redirect(url_for('dashboard'))
@@ -114,9 +119,9 @@ def create_user():
 def add_facility():
     sqlFacilities=("SELECT name, code FROM facilities")
     if request.method=='GET':
-        msg="Ready to add a facility"
+        session['msg']="Ready to add a facility"
         facilities_list=lostQuery(sqlFacilities, None)
-        return render_template('add_facility.html', facilities_list=facilities_list, add_message=msg)
+        return render_template('add_facility.html', facilities_list=facilities_list, add_message=session['msg'])
 
     if request.method=='POST':
         fname=request.form.get('fname')
@@ -129,13 +134,13 @@ def add_facility():
             if not (codeTaken):
                 sqlNewf="INSERT INTO facilities(name, code) VALUES (%s, %s);"
                 lostQuery(sqlNewf, (fname, fcode))
-                msg="Facility successfuly added"
+                session['msg']="Facility successfuly added"
             else:
-                msg="A facility already has that code"
+                session['msg']="A facility already has that code"
         else:
-            msg="A facility already has that name"
+            session['msg']="A facility already has that name"
         facilities_list=lostQuery(sqlFacilities, None)
-        return render_template('add_facility.html', facilities_list=facilities_list, add_message=msg)
+        return render_template('add_facility.html', facilities_list=facilities_list, add_message=session['msg'])
 
 @app.route('/add_asset', methods=['GET', 'POST'])
 def add_asset():
@@ -144,9 +149,9 @@ def add_asset():
     facilities_list=lostQuery(sqlFacilities, None)
     
     if request.method=='GET':
-        msg="Ready to add an asset"
+        session['msg']="Ready to add an asset"
         assets_list=lostQuery(sqlAssets, None)
-        return render_template('add_asset.html', add_message=msg, assets_list=assets_list, facilities_list=facilities_list)
+        return render_template('add_asset.html', add_message=session['msg'], assets_list=assets_list, facilities_list=facilities_list)
 
     if request.method=='POST':
         atag=request.form.get('atag')
@@ -162,25 +167,25 @@ def add_asset():
             asset_pk=lostQuery(sqlApk, (atag,))
             sqlNewLocation="INSERT INTO asset_location(asset_fk, facility_fk, arrival) VALUES (%s, %s, %s);"
             lostQuery(sqlNewLocation, (str(asset_pk[0][0]), str(facility), str(arrival)))
-            msg="Asset successfully added"
+            session['msg']="Asset successfully added"
         else:
-            msg="A asset already has that tag"
+            session['msg']="A asset already has that tag"
         assets_list=lostQuery(sqlAssets, None)
-        return render_template('add_asset.html', add_message=msg, assets_list=assets_list, facilities_list=facilities_list)
+        return render_template('add_asset.html', add_message=session['msg'], assets_list=assets_list, facilities_list=facilities_list)
 
 @app.route('/dispose_asset', methods=['GET', 'POST'])
 def dispose_asset():
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))
     if not (role):
-        msg="required to dispose of assets"
-        return render_template('dashboard.html', usermsg=msg)
+        session['msg']="required to dispose of assets"
+        return redirect(url_for('dashboard'))
     if not (role[0][0]=="Logistics Officer"):
-        msg="required to have the role of Logistics Officer to dispose of assets"
-        return render_template('dashboard.html', usermsg=msg)
+        session['msg']="required to have the role of Logistics Officer to dispose of assets"
+        return redirect(url_for('dashboard'))
     if request.method=='GET':
-        msg="User cleared to register dispose assets"
-        return render_template('dispose_asset.html', dispose_msg=msg)
+        session['msg']="User cleared to register dispose assets"
+        return render_template('dispose_asset.html', dispose_msg=session['msg'])
 
     if request.method=='POST':
         atag=request.form.get('atag')
@@ -188,29 +193,29 @@ def dispose_asset():
         sqlExist="SELECT asset_pk from assets where tag=%s;"
         assetPk=lostQuery(sqlExist, (atag,))
         if not (assetPk):
-            msg="There is no asset that matches that tag"
+            session['msg']="There is no asset that matches that tag"
         else:
             sqlTrash="SELECT al.arrival from asset_location as al inner join facilities as f on f.facility_pk=al.facility_fk where al.asset_fk=%s and f.code='Trash';"
             #sqlLocate="SELECT f.code from facility as f inner join asset_location as ao on f.facility_pk=ao.facility_fk where ao.asset_fk='%s' and f.code='Trash';"
             disposed=lostQuery(sqlTrash, (assetPk[0][0],))
             if (disposed):
-                msg="That asset has already been disposed of"
+                session['msg']="That asset has already been disposed of"
             else:
                 sqlDeparture="UPDATE asset_location set departure=%s where departure is NULL and asset_fk=%s"
                 lostQuery(sqlDeparture, (dday, assetPk[0][0]))
                 sqlDispose="INSERT INTO asset_location(asset_fk, arrival, facility_fk) select %s, %s, facility_pk from facilities where facilities.code='Trash';"
                 lostQuery(sqlDispose, (assetPk[0][0], dday))
-                msg="Asset successfully listed as disposed"
-        return render_template('dispose_asset.html', dispose_msg=msg)
+                session['msg']="Asset successfully listed as disposed"
+        return render_template('dispose_asset.html', dispose_msg=session['msg'])
 
 @app.route('/asset_report', methods=['GET', 'POST'])
 def asset_report():
     sqlFacilities=("SELECT facility_pk, name FROM facilities")
     facilities_list=lostQuery(sqlFacilities, None)
     if request.method=='GET':
-        msg="You may specify which day and any (or all) facility:"
+        session['msg']="You may specify which day and any (or all) facility:"
         blank=iter([])
-        return render_template('asset_report.html', report_msg=msg, facilities_list=facilities_list, report_list=blank)
+        return render_template('asset_report.html', report_msg=session['msg'], facilities_list=facilities_list, report_list=blank)
     if request.method=='POST':
         facility=request.form.get('facility')
         day=request.form.get('reportday')
@@ -220,15 +225,26 @@ def asset_report():
         else:
             sqlReport="SELECT a.tag, a.description, f.name, al.arrival, al.departure from assets as a inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where facility_pk=%s and al.arrival<=%s and (al.departure>=%s or al.departure is NULL)"
             report_list=lostQuery(sqlReport, (facility, day, day))
-        msg="Report generated:"
-        return render_template('asset_report.html', report_msg=msg, facilities_list=facilities_list, report_list=report_list)
+        session['msg']="Report generated:"
+        return render_template('asset_report.html', report_msg=session['msg'], facilities_list=facilities_list, report_list=report_list)
 
 @app.route('/transfer_req', methods=['GET', 'POST'])
 def transfer_req():
     # Check user is a logistics officer
+    sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
+    role=lostQuery(sqlRole,(session['user'],))
+    if not (role):
+        session['msg']="required to dispose of assets"
+        return redirect(url_for('dashboard'))
+    if not (role[0][0]=="Logistics Officer"):
+        session['msg']="required to have the role of Logistics Officer to dispose of assets"
+        return redirect(url_for('dashboard'))
+    
     if request.method=='GET':
         # Get facilities
-        return render_template('transfer_req.html', facility_list=facilities, req_msg=msg)
+        sqlFacilities=("SELECT facility_pk, name FROM facilities")
+        facilities=lostQuery(sqlFacilities, None)
+        return render_template('transfer_req.html', facility_list=facilities, req_msg=session['msg'])
     if request.method=='POST':
         atag=request.form.get('tag')
         source=request.form.get('source')
@@ -237,47 +253,75 @@ def transfer_req():
         sqlAssetExists="SELECT facility_fk FROM assets where tag=%s"
         location=lostQuery(sqlAssetExists, (atag,))
         if not (location==source):
-            msg="No such asset tag at that source facility"
+            session['msg']="No such asset tag at that source facility"
         else:
             #Insert request into DB
-            msg="Asset request successfully submitted"
-        return render_template('transfer_req.html', facility_list=facilities, req_msg=msg)
+            sqlUser="SELECT user_pk from users where username=%s;"
+            userPk=lostQuery(sqlUser, (session['user'],))
+            sqlRequest="INSERT INTO transfer_request (requester_fk, time_requested) OUTPUT  VALUES (%s, CURRENT_DATE);"
+            lostQuery(sqlRequest, (userPk,))
+            sqlRequestPk="SELECT currval(pg_get_serial_sequence('transfer_request', 'request_pk'));"
+            requestPk=lostQuery(sqlRequestPK, (None,))
+            sqlAssetPk="SELECT asset_pk from assets where tag=%s;"
+            assetPk=lostQuery(sqlAssetPk, (atag,))
+            sqlTransfer="INSERT INTO asset_transfers (request_fk, asset_fk, source_fk) VALUES (%s, %s, %s);"
+            lostQuery(sqlTransfer, (requestPk, assetPk, source))
+            session['msg']="Transfer request successfully submitted"
+        return render_template('transfer_req.html', facility_list=facilities, req_msg=session['msg'])
 
 @app.route('/approve_req', methods=['GET', 'POST'])
 def approve_req():
     # Check user is a facilities officer
+     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
+    role=lostQuery(sqlRole,(session['user'],))
+    if not (role):
+        session['msg']="required to dispose of assets"
+        return redirect(url_for('dashboard'))
+    if not (role[0][0]=="Facilities Officer"):
+        session['msg']="required to have the role of Facilities Officer to dispose of assets"
+        return redirect(url_for('dashboard'))
+    
     if request.method=='GET':
         # Check if there exists a matching request that has not yet been approved
-        return render_template('approve_req.html', approve_msg=msg)
+        return render_template('approve_req.html', approve_msg=session['msg'])
     if request.method=='POST':
         approved=request.form.get('approval')
         if not (approved):
             # Remove request or mark rejected
-            msg="Transfer request rejected"
-            return redirect(url_for('dashboard'), usermsg=msg)
+            session['msg']="Transfer request rejected"
+            return redirect(url_for('dashboard'), usermsg=session['msg'])
         else:
             # Mark request approved
             # Insert asset in transit data
-            msg="Transfer request approved"
-            return redirect(url_for('dashboard'), usermsg=msg)
+            session['msg']="Transfer request approved"
+            return redirect(url_for('dashboard'), usermsg=session['msg'])
 
 @app.route('/update_transit', methods=['GET', 'POST'])
 def update_transit():
     # Check if user is a logistics officer
+     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
+    role=lostQuery(sqlRole,(session['user'],))
+    if not (role):
+        session['msg']="required to dispose of assets"
+        return redirect(url_for('dashboard'))
+    if not (role[0][0]=="Logistics Officer"):
+        session['msg']="required to have the role of Logistics Officer to dispose of assets"
+        return redirect(url_for('dashboard'))
+    
     if request.method=='GET':
         # Check if there exists a matching transit without a load/unload time
-        return render_template('update_transit.html', update_msg=msg)
+        return render_template('update_transit.html', update_msg=session['msg'])
     if request.method=='POST':
         # Update load or unload times
-        msg="Transit request updated"
-        return redirect(url_for('dashboard'), usermsg=msg)
+        session['msg']="Transit request updated"
+        return redirect(url_for('dashboard'), usermsg=session['msg'])
 
 @app.route('/transfer_report', methods=['GET', 'POST'])
 def transfer_report():
     if request.method=='GET':
-        msg="Please enter the date for assets in transit"
+        session['msg']="Please enter the date for assets in transit"
         blank=iter([])
-        return render_template('transfer_report.html', transfer_msg=msg, tableheader=blank, report_list=blank)
+        return render_template('transfer_report.html', transfer_msg=session['msg'], tableheader=blank, report_list=blank)
     if request.method=='POST':
         date=request.form.get('date')
         headers=[('Asset Tag'), ('Load Time'), ('Unload Time')]
@@ -285,12 +329,15 @@ def transfer_report():
         # If unload time is null, that's ok. If load time is null, can't determine
         sqlReport=""
         report=lostQuery(sqlReport, (date, date))
-        msg="Report generated"
-        return render_template('transfer_report.html', transfer_msg=msg, tableheader=headers, report_list=report);
+        session['msg']="Report generated"
+        return render_template('transfer_report.html', transfer_msg=session['msg'], tableheader=headers, report_list=report);
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
-    return render_template('dashboard.html', usermsg=session['user'])
+    # Get role
+    # Get tasks appropriate to role: If Facilities Officer, approve transit requests, Logistics Officer Tracking
+    blank=iter([])
+    return render_template('dashboard.html', usermsg=session['msg'], tableheader=blank, todo_list=blank)
 
 @app.route('/logout')
 def logout():

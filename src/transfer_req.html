@@ -1,0 +1,27 @@
+<html>
+	<h1> Transfer Request Interface </h1>
+	<body>
+		{{add_message}}
+		<br />
+		<form name='new_asset' action="{{url_for('add_asset')}}" method='POST'>
+			<input type="text" placeholder='Asset Tag' name='atag' maxlength="16" required/>
+			<input type="text" placeholder='Asset Description' name='adesc' maxlength="50" required/>
+			<input type="date" name='arrival' required/>
+			<select name='source'>
+				{% for facility in facilities_list %}
+					<option name='source' value="{{facility[0]}}" SELECTED>{{facility[1]}}</option>
+				{% endfor %}
+			</select>Source Facility
+			<select name='destination'>
+				{% for facility in facilities_list %}
+					<option name='destination' value="{{facility[0]}}" SELECTED>{{facility[1]}}</option>
+				{% endfor %}
+			</select>Destination Facility
+			<br />
+			<input type="submit" value="Add Asset" name="submit" />
+		</form>
+	</body>
+</html>
+
+
+

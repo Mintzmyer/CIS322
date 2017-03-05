@@ -8,6 +8,21 @@
 		<br />
 		Your username is {{usermsg}}
 		<br />
+		<table style="width:100%">
+			<tr>
+				{% for head in tableheader %}
+				<th>{{head}}</ th>
+				{% endfor %}
+			</tr>
+			{% for line in todo_list %}
+			<tr>
+				{% for value in line %}
+				<th>{{value}}</ th>
+				{% endfor %}
+			</tr>
+			{% endfor %}
+		</table>
+
 		<form name = 'asset_report' action="{{url_for('asset_report')}}">
 			<input type="submit" value='Asset Report' name='asset_report' />
 		</form>
