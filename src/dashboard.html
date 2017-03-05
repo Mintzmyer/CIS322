@@ -5,8 +5,8 @@
 				<input type="submit" value='Logout {{uname}}' name='logout' />
 			</form>
 		</div>
+		{{usermsg}}
 		<br />
-		Your username is {{usermsg}}
 		<br />
 		<table style="width:100%">
 			<tr>
@@ -14,8 +14,11 @@
 				<th>{{head}}</ th>
 				{% endfor %}
 			</tr>
-			{% for line in todo_list %}
-			<tr><td><a href="{{url_for('test')}}?request_pk={{line[0]}}">{{line[1]}}{{line[2]}}{{line[3]}}{{line[4]}}</a></td></tr>
+			{% for line in ltodo_list %}
+			<tr><td><a href="{{url_for('update_transit')}}?request_pk={{line[0]}}"> {{line[1]}}</a> </td> <td>{{line[2]}}</td> <td>{{line[3]}}</td> <td>{{line[4]}}</td> <td>{{line[5]}}</td></tr>
+			{% endfor %}
+			{% for line in ftodo_list %}
+			<tr><td><a href="{{url_for('approve_req')}}?request_pk={{line[0]}}"> {{line[1]}}</a> </td> <td>{{line[2]}}</td> <td>{{line[3]}}</td> <td>{{line[4]}}</td> <td>{{line[5]}}</td></tr>
 			{% endfor %}
 		</table>
 

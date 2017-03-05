@@ -117,7 +117,7 @@ def create_user():
 
 @app.route('/add_facility', methods=['GET', 'POST'])
 def add_facility():
-    sqlFacilities=("SELECT name, code FROM facilities")
+    sqlFacilities=("SELECT name, code FROM facilities;")
     if request.method=='GET':
         session['msg']="Ready to add a facility"
         facilities_list=lostQuery(sqlFacilities, None)
@@ -144,7 +144,7 @@ def add_facility():
 
 @app.route('/add_asset', methods=['GET', 'POST'])
 def add_asset():
-    sqlFacilities=("SELECT facility_pk, name FROM facilities")
+    sqlFacilities=("SELECT facility_pk, name FROM facilities;")
     sqlAssets=("SELECT a.tag, a.description, f.name from assets as a inner join asset_location as ao on a.asset_pk=ao.asset_fk inner join facilities as f on ao.facility_fk=f.facility_pk")
     facilities_list=lostQuery(sqlFacilities, None)
     
@@ -210,7 +210,7 @@ def dispose_asset():
 
 @app.route('/asset_report', methods=['GET', 'POST'])
 def asset_report():
-    sqlFacilities=("SELECT facility_pk, name FROM facilities")
+    sqlFacilities=("SELECT facility_pk, name FROM facilities;")
     facilities_list=lostQuery(sqlFacilities, None)
     if request.method=='GET':
         session['msg']="You may specify which day and any (or all) facility:"
@@ -240,39 +240,38 @@ def transfer_req():
         session['msg']="required to have the role of Logistics Officer to dispose of assets"
         return redirect(url_for('dashboard'))
     
+    # Get facilities
+    sqlFacilities=("SELECT facility_pk, name FROM facilities;")
+    facilities=lostQuery(sqlFacilities, None)
+
     if request.method=='GET':
-        # Get facilities
-        sqlFacilities=("SELECT facility_pk, name FROM facilities")
-        facilities=lostQuery(sqlFacilities, None)
-        return render_template('transfer_req.html', facility_list=facilities, req_msg=session['msg'])
+        return render_template('transfer_req.html', facilities_list=facilities, transfer_msg=session['msg'])
     if request.method=='POST':
-        atag=request.form.get('tag')
+        atag=request.form.get('atag')
         source=request.form.get('source')
         destination=request.form.get('destination')
         # Check asset tag exists
-        sqlAssetExists="SELECT facility_fk FROM assets where tag=%s"
-        location=lostQuery(sqlAssetExists, (atag,))
-        if not (location==source):
+        sqlAssetExists="SELECT al.facility_fk FROM asset_location as al inner join assets as a on al.asset_fk=a.asset_pk where a.tag=%s and al.facility_fk=%s"
+        location=lostQuery(sqlAssetExists, (atag, source))
+        if not (location):
             session['msg']="No such asset tag at that source facility"
         else:
             #Insert request into DB
             sqlUser="SELECT user_pk from users where username=%s;"
-            userPk=lostQuery(sqlUser, (session['user'],))
-            sqlRequest="INSERT INTO transfer_request (requester_fk, date_requested) OUTPUT  VALUES (%s, CURRENT_DATE);"
-            lostQuery(sqlRequest, (userPk,))
-            sqlRequestPk="SELECT currval(pg_get_serial_sequence('transfer_request', 'request_pk'));"
-            requestPk=lostQuery(sqlRequestPK, (None,))
+            userPk=lostQuery(sqlUser, (session['user'],))[0][0]
+            sqlRequest="INSERT INTO transfer_request (requester_fk, date_requested) VALUES (%s, CURRENT_DATE); SELECT currval(pg_get_serial_sequence('transfer_request', 'request_pk'));"
+            requestPk=lostQuery(sqlRequest, (userPk,))[0][0]
             sqlAssetPk="SELECT asset_pk from assets where tag=%s;"
-            assetPk=lostQuery(sqlAssetPk, (atag,))
+            assetPk=lostQuery(sqlAssetPk, (atag,))[0][0]
             sqlTransfer="INSERT INTO asset_transfers (request_fk, asset_fk, source_fk) VALUES (%s, %s, %s);"
             lostQuery(sqlTransfer, (requestPk, assetPk, source))
             session['msg']="Transfer request successfully submitted"
-        return render_template('transfer_req.html', facility_list=facilities, req_msg=session['msg'])
+        return render_template('transfer_req.html', facilities_list=facilities, transfer_msg=session['msg'])
 
 @app.route('/approve_req', methods=['GET', 'POST'])
 def approve_req():
     # Check user is a facilities officer
-     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
+    sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))
     if not (role):
         session['msg']="required to dispose of assets"
@@ -285,31 +284,32 @@ def approve_req():
         # Check if there exists a matching request that has not yet been approved
         requestPk=request.args['request_pk']
         headers=[('Transit ID'), ('Asset Tag'), ('Source Facilitiy'), ('Destination Facility'), ('Request Date')]
-        sqlRequests="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_requested FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_at as at on a.asset_pk=at.asset_fk inner join facilities as f on at.facility_fk=f.facility_pk where tr.request_pk=%s and (tr.approver_fk is NULL and tr.date_approved is NULL);" # My gosh it's hideous what have I done
-        requestData=lostQuery(sqlRequests, (requestPk,))
+        sqlRequests="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_requested FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where tr.request_pk=%s and (tr.approver_fk is NULL and tr.date_approved is NULL);" # My gosh it's hideous what have I done
+        requestData=lostQuery(sqlRequests, (requestPk,))[0]
         if not (requestData):
             session['msg']="No further action required"
             return redirect(url_for('dashboard'))
-        session['msg']="Please review the transfer request and approve or reject it"
-        return render_template('approve_req.html', approve_msg=session['msg'], requestPk=requestPk, tableheader=headers, request=requestData)
+        else:
+            session['msg']="Please review the transfer request and approve or reject it"
+            return render_template('approve_req.html', approve_msg=session['msg'], request_pk=requestPk, tableheader=headers, request=requestData)
     if request.method=='POST':
         approved=request.form.get('Decision')
         requestPk=request.form.get('requestPk')
-        if not (approved):
+        if (approved == 'Reject'):
             # Remove request or mark rejecteda
-            sqlReject="DELETE FROM transfer_request where request_id=%s"
+            sqlReject="DELETE FROM transfer_request where request_pk=%s"
             lostQuery(sqlReject, (requestPk,))
             session['msg']="Transfer request rejected"
-            return redirect(url_for('dashboard'), usermsg=session['msg'])
+            return redirect(url_for('dashboard'))
         else:
             # Mark request approved
             # Insert asset in transit data
             sqlUser="SELECT user_pk from users where username=%s;"
-            userPk=lostQuery(sqlUser, (username,))
+            userPk=lostQuery(sqlUser, (session['user'],))[0][0]
             sqlApprove="UPDATE transfer_request set approver_fk=%s, date_approved=CURRENT_DATE;"
             lostQuery(sqlApprove, (userPk,))
             session['msg']="Transfer request approved"
-            return redirect(url_for('dashboard'), usermsg=session['msg'])
+            return redirect(url_for('dashboard'))
 
 @app.route('/update_transit', methods=['GET', 'POST'])
 def update_transit():
@@ -327,8 +327,11 @@ def update_transit():
         # Check if there exists a matching transit without a load/unload time
         requestPk=request.args['request_pk']
         headers=[('Transit ID'), ('Asset Tag'), ('Source Facilitiy'), ('Destination Facility'), ('Request Date')]
-        sqlRequests="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_requested FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_at as at on a.asset_pk=at.asset_fk inner join facilities as f on at.facility_fk=f.facility_pk where tr.request_pk=%s and (tr.approver_fk is not NULL and ((atr.load is NULL or atr.unload is NULL) or (atr.load is NULL and atr.unload is NULL)));" # My gosh it's hideous what have I done
-        requestData=lostQuery(sqlRequests, (requestPk,))
+
+
+        sqlTracking="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_approved FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where tr.request_pk=%s and ((atr.load is NULL or atr.unload is NULL) or (atr.load is NULL and atr.unload is NULL));" # My gosh it's hideous what have I done
+
+        requestData=lostQuery(sqlTracking, (requestPk,))[0]
         if not (requestData):
             session['msg']="No further action required"
             return redirect(url_for('dashboard'))
@@ -336,12 +339,24 @@ def update_transit():
         return render_template('update_transit.html', update_msg=session['msg'], tableheader=headers, request=requestData, request_fk=requestPk)
     if request.method=='POST':
         # Update load or unload times
-        requestPk=request.form.get('submit')
+        requestPk=request.form.get('request_pk')
         load=request.form.get('load')
         unload=request.form.get('unload')
-        sqlSchedule="UPDATE asset_transfers SET load=%s, unload=%s where request_fk=%s;"
-        lostQuery(sqlSchedule, (load, unload, requestPk))
-        session['msg']="Transit request updated"
+        if (load and unload):
+            if (load < unload):
+                sqlSchedule="UPDATE asset_transfers SET load=%s, unload=%s where request_fk=%s;"
+                lostQuery(sqlSchedule, (load, unload, requestPk))
+                session['msg']="Transit request updated"
+            else:
+                session['msg']="Load date must be before unload date"
+        elif (load):
+            sqlSchedule="UPDATE asset_transfers SET load=%s where request_fk=%s;"
+            lostQuery(sqlSchedule, (load, requestPk))
+            session['msg']="Transit request updated"
+        elif (unload):
+            sqlSchedule="UPDATE asset_transfers SET unload=%s where request_fk=%s;"
+            lostQuery(sqlSchedule, (unload, requestPk))
+            session['msg']="Transit request updated"
         return redirect(url_for('dashboard'))
 
 @app.route('/transfer_report', methods=['GET', 'POST'])
@@ -362,6 +377,7 @@ def transfer_report():
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
+    blank=iter([])
     # Get role
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))[0][0]
@@ -369,16 +385,18 @@ def dashboard():
     # If Logistics Officer, add transit tracking
     if (role=="Logistics Officer"):
         headers=[('Transit ID'), ('Asset Tag'), ('Source Facilitiy'), ('Destination Facility'), ('Approval Date')]
-        sqlTracking="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_approved FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_at as at on a.asset_pk=at.asset_fk inner join facilities as f on at.facility_fk=f.facility_pk where (atr.load is NULL or atr.unload is NULL);" # My gosh it's hideous what have I done
-        todo=lostQuery(sqlRequests, (None,))
+        sqlTracking="SELECT tr.request_pk, tr.request_pk, a.tag, f.name, f.name, tr.date_approved FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where (tr.approver_fk is not NULL and ((atr.load is NULL or atr.unload is NULL) or (atr.load is NULL and atr.unload is NULL)));" # My gosh it's hideous what have I done
+ 
+        todo=lostQuery(sqlTracking, (None,))
+        return render_template('dashboard.html', usermsg=session['msg'], tableheader=headers, ftodo_list=blank, ltodo_list=todo)
 
     # If Facilities Officer, approve transit requests, 
     if (role=="Facilities Officer"):
         headers=[('Transit ID'), ('Asset Tag'), ('Source Facilitiy'), ('Destination Facility'), ('Request Date')]
-        sqlRequests="SELECT tr.request_pk, a.tag, f.name, f.name, tr.date_requested FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_at as at on a.asset_pk=at.asset_fk inner join facilities as f on at.facility_fk=f.facility_pk where (tr.approver_fk is NULL and tr.date_approved is NULL);" # My gosh it's hideous what have I done
+        sqlRequests="SELECT tr.request_pk, tr.request_pk, a.tag, f.name, f.name, tr.date_requested FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where (tr.approver_fk is NULL and tr.date_approved is NULL);" # My gosh it's hideous what have I done
         todo=lostQuery(sqlRequests, (None,))
+        return render_template('dashboard.html', usermsg=session['msg'], tableheader=headers, ftodo_list=todo, ltodo_list=blank)
 
-    return render_template('dashboard.html', usermsg=session['msg'], tableheader=headers, todo_list=todo)
 
 @app.route('/logout')
 def logout():
