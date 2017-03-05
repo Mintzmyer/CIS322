@@ -27,3 +27,17 @@ INSERT INTO facilities (name, code) VALUES ('Disposed', 'Trash');
 DROP TABLE if exists asset_location;
 -- Create relational table for assets and their location (facility)
 CREATE TABLE asset_location (asset_fk integer, facility_fk integer, arrival date, departure date);
+
+-- Remove/create transfer_request table
+DROP TABLE if exists transfer_request;
+-- Create table for transfer requests
+-- Grouped data on larger request here
+-- Mostly logical/beaurocratic process for overall 'Shipment Order'
+CREATE TABLE transfer_request (request_pk serial PRIMARY KEY, requester_fk integer, time_requested date, approver_fk integer, time_approved date);
+
+-- Remove/create asset_transfers table
+DROP TABLE if exists asset_transfers;
+-- Create relational table for assets in transfer requests
+-- Grouped data for individual assets here
+-- Entire request inventory may need to be shipped separately
+CREATE TABLE asset_transfers (request_fk integer, asset_fk integer, source_fk integer, load date, destination_fk integer, unload date, scheduler_fk integer);
