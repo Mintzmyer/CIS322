@@ -276,11 +276,17 @@ def update_transit():
 def transfer_report():
     if request.method=='GET':
         msg="Please enter the date for assets in transit"
-        return render_template('transfer_report.html', transfer_msg=msg)
+        blank=iter([])
+        return render_template('transfer_report.html', transfer_msg=msg, tableheader=blank, report_list=blank)
     if request.method=='POST':
         date=request.form.get('date')
+        headers=[('Asset Tag'), ('Load Time'), ('Unload Time')]
         # SELECT asset tag, load time, unload time of all assets load time <= date <= unload time
         # If unload time is null, that's ok. If load time is null, can't determine
+        sqlReport=""
+        report=lostQuery(sqlReport, (date, date))
+        msg="Report generated"
+        return render_template('transfer_report.html', transfer_msg=msg, tableheader=headers, report_list=report);
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
