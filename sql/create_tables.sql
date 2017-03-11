@@ -4,7 +4,7 @@ DROP TABLE if exists users;
 -- serialized pk for continuity with username change 
 -- max username and password length is 16 chars
 -- roles referenced with foregin key to relational roles table
-CREATE TABLE users ( user_pk serial PRIMARY KEY, username varchar(16), password varchar(16), role_fk integer);
+CREATE TABLE users ( user_pk serial PRIMARY KEY, username varchar(16), password varchar(16), role_fk integer, active boolean);
 
 -- Remove roles, create table anew
 DROP TABLE if exists roles;

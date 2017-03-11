@@ -63,6 +63,13 @@ def login():
             session['msg']="Username is not registered"
             return render_template('login.html', login_msg=session['msg'])
 
+        #If user is not active, report that
+        sqlActive="SELECT active from users where username=%s;"
+        activeU=lostQuery(sqlActive, (username,))[0][0]
+        elif not (activeU):
+            session['msg']="User is no longer active"
+            return render_template('login.html', login_msg=session['msg'])
+
         #If username exists, check password
         else:
             sqlPassword="SELECT user_pk from users where username=%s and password=%s;"
@@ -74,8 +81,6 @@ def login():
                 return render_template('login.html', login_msg=session['msg'])
             else:
                 session['user']=username
-                #sqlRole="SELECT role from users where user_pk='"%s"';"
-                #session['role']=lostQuery(sqlRole,(userPk))
 
         return redirect(url_for('dashboard'))
 
@@ -98,8 +103,8 @@ def create_user():
         
         #If user does not exist, insert submitted data into users table
         if not (userPk):
-            sqlNewUser="INSERT INTO users(username, password, role_fk) VALUES (%s, %s, %s);"
-            lostQuery(sqlNewUser, (username, password, role))    
+            sqlNewUser="INSERT INTO users(username, password, role_fk, active) VALUES (%s, %s, %s, %s);"
+            lostQuery(sqlNewUser, (username, password, role, True))    
             sqlUser="SELECT user_pk from users where username=%s;"
             userPk=str(lostQuery(sqlUser, (username,))[0][0])
             #Query new submission for session username
