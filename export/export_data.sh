@@ -11,10 +11,17 @@ fi
 
 
 # users.csv - a csv file containing user information
+[ -f $2/users.csv ] && rm $2/users.csv
 python usersDump.py
+
 # facilities.csv - a csv file containing LOST facility information
+[ -f $2/facilities.csv ] && rm $2/facilities.csv
 python facilitiesDump.py
+
 # assets.csv - a csv file containing LOST assets
+[ -f $2/assets.csv ] && rm $2/assets.csv
 python assetsDump.py
+
 # transfers.csv - a csv file containing transfer information
+[ -f $2/transfers.csv ] && rm $2/transfers.csv
 python transfersDump.py
