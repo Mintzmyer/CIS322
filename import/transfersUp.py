@@ -46,15 +46,23 @@ def uploadTransfers(arrayData):
 
     for line in arrayData[1:]:
         print(line)
-        sqlTransfer="INSERT INTO transfer_request (requester_fk, date_requested, approver_fk, date_approved) SELECT user_pk FROM users WHERE username=%s, %s, user_pk FROM users WHERE username=%s, %s);"
-        lostQuery(sqlTransfer, (line[reqby], line[reqdt], line[appby], line[appdt]))
+        sqlTransfer="INSERT INTO transfer_request (date_requested, date_approved, requester_fk, approver_fk) SELECT %s, %s, u.user_pk, v.user_pk FROM (SELECT user_pk from users WHERE username=%s) as u cross join (SELECT user_pk FROM users WHERE username=%s) as v;"
+        lostQuery(sqlTransfer, (line[reqdt], line[appdt], line[reqby], line[appby]))
         sqlRequestFk="SELECT max(request_pk) from transfer_request where (date_requested=%s AND date_approved=%s);"
         requestPk=lostQuery(sqlRequestFk, (line[reqdt], line[appdt]))[0][0]
-        sqlATransfers="INSERT INTO asset_transfers (request_fk, asset_fk, source_fk, load, destination_fk, unload) SELECT %s, asset_pk from assets where tag=%s, facility_pk from facilities where code=%s, %s, facility_pk from facilities where code=%s, %s;"
-        lostQuery(sqlATransfers, (requestPk, line[atag], line[source], line[load], line[dest], line[unload]))
+        if ('None' in line[load]): load_dt=None
+        else: load_dt=line[load]
+        if ('None' in line[unload]): unload_dt=None
+        else: unload_dt=line[unload]
+        sqlATransfers="INSERT INTO asset_transfers (request_fk, load, unload, asset_fk, source_fk, destination_fk) SELECT %s, %s, %s, a.asset_pk, f.facility_pk, g.facility_pk FROM (SELECT asset_pk from assets where tag=%s) as a CROSS JOIN (SELECT facility_pk from facilities where code=%s) as f CROSS JOIN (SELECT facility_pk from facilities where code=%s) as g;"
+        lostQuery(sqlATransfers, (requestPk, load_dt, unload_dt, line[atag], line[source], line[dest]))
 
 if not (len(sys.argv)==3):
     print("usage: transfersUp.py <db name> <input dir>")
     quit()
-csvTransfers=sys.argv[2]
+
+path=sys.argv[2]
+if not (path[-1]=='/'):
+    path=path+'/'
+csvTransfers=path+'transfers.csv'
 parseFile(csvTransfers)

@@ -41,11 +41,16 @@ def uploadUsers(arrayData):
 
     for line in arrayData[1:]:
         print(line)
-        sqlUser="INSERT INTO users (username, password, role_fk, active) VALUES (%s, %s, %s, %s);"
-        lostQuery(sqlUser, (line[uname], line[upass], line[urole], line[uactive].strip()))
+        sqlUser="INSERT INTO users (username, password, active, role_fk) SELECT %s, %s, %s, role_pk from roles where title=%s;"
+            #sqlAssetLoc="INSERT INTO asset_location(asset_fk, arrival, departure, facility_fk) SELECT %s, %s, %s, facility_pk from facilities where facilities.code=%s;"
+        lostQuery(sqlUser, (line[uname], line[upass], line[uactive].strip(), line[urole]))
 
 if not (len(sys.argv)==3):
     print("usage: usersUp.py <db name> <input dir>")
     quit()
-csvUsers=sys.argv[2]
+
+path=sys.argv[2]
+if not (path[-1]=='/'):
+    path=path+'/'
+csvUsers=path+'users.csv'
 parseFile(csvUsers)

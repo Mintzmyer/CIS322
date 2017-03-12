@@ -38,7 +38,7 @@ def uploadAssets(arrayData):
         if ('facility' in arrayData[0][i]): afacility=i
         if ('acquired' in arrayData[0][i]): acquired=i
         if ('disposed' in arrayData[0][i]): disposed=i
-        print(arrayData[0][i])
+        #print(arrayData[0][i])
 
     for line in arrayData[1:]:
         print(line)
@@ -47,17 +47,20 @@ def uploadAssets(arrayData):
         sqlApk="SELECT asset_pk from assets where tag=%s;"
         asset_pk=lostQuery(sqlApk, (line[atag],))
         # If asset is disposed, add departure date and enter it into 'Disposed' location
-        if not (line[disposed]=='None\n'):
+        if not ('None' in line[disposed]) and not ('NULL' in line[disposed]):
             sqlAssetLoc="INSERT INTO asset_location(asset_fk, arrival, departure, facility_fk) SELECT %s, %s, %s, facility_pk from facilities where facilities.code=%s;"
             lostQuery(sqlAssetLoc, (str(asset_pk[0][0]), line[acquired], line[disposed], line[afacility]))
             sqlDispose="INSERT INTO asset_location(asset_fk, arrival, facility_fk) select %s, %s, facility_pk from facilities where facilities.code='Trash';"
             lostQuery(sqlDispose, (str(asset_pk[0][0]), line[disposed]))
         else:
-            sqlAssetLoc="INSERT INTO asset_location(asset_fk, arrival, facility_fk) SELECT %s, %s, facility_pk from facilities where facilities.code=%s;"
+            sqlAssetLoc="INSERT INTO asset_location(asset_fk, arrival, facility_fk) SELECT %s, %s, facility_pk from facilities where facilities.name=%s;"
             lostQuery(sqlAssetLoc, (str(asset_pk[0][0]), line[acquired], line[afacility]))
 
 if not (len(sys.argv)==3):
     print("usage: assetsUp.py <db name> <input dir>")
     quit()
-csvAssets=sys.argv[2]
+path=sys.argv[2]
+if not (path[-1]=='/'):
+    path=path+'/'
+csvAssets=path+'assets.csv'
 parseFile(csvAssets)

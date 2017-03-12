@@ -16,7 +16,7 @@ python usersDump.py $1 $2
 
 # facilities.csv - a csv file containing LOST facility information
 [ -f $2/facilities.csv ] && rm $2/facilities.csv
-python facilitiesDump.py $1 $1
+python facilitiesDump.py $1 $2
 
 # assets.csv - a csv file containing LOST assets
 [ -f $2/assets.csv ] && rm $2/assets.csv

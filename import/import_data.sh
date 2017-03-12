@@ -11,13 +11,13 @@ fi
 
 
 # users.csv - a csv file containing user information
-python usersUp.py $1 $2/users.csv
+python usersUp.py $1 $2
 
 # facilities.csv - a csv file containing LOST facility information
-python facilitiesUp.py $1 $2/facilities.csv
+python facilitiesUp.py $1 $2
 
 # assets.csv - a csv file containing LOST assets
-python assetsUp.py $1 $2/assets.csv
+python assetsUp.py $1 $2
 
 # transfers.csv - a csv file containing transfer information
-python transfersUp.py $1 $2/transfers.csv
+python transfersUp.py $1 $2

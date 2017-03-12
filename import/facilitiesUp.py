@@ -46,5 +46,8 @@ def uploadFacilities(arrayData):
 if not (len(sys.argv)==3):
     print("usage: facilitiesUp.py <db name> <input dir>")
     quit()
-csvFacilities=sys.argv[2]
+path=sys.argv[2]
+if not (path[-1]=='/'):
+    path=path+'/'
+csvFacilities=path+'facilities.csv'
 parseFile(csvFacilities)
