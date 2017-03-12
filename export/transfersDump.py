@@ -23,7 +23,7 @@ def lostQuery(sqlQuery, params):
 f = open('transfers.csv', 'w')
 
 # Write header for file
-header = "asset_tag, request_by, request_dt, approve_by, approve_dt, source, destination, load_dt, unload_dt\n"
+header = "asset_tag,request_by,request_dt,approve_by,approve_dt,source,destination,load_dt,unload_dt\n"
 f.write(header)
 
 # Collect transfer data in mass array dump
@@ -31,7 +31,7 @@ sqlTransferDump="SELECT a.tag, tr.requester_fk, tr.date_requested, tr.approver_f
 transfers=lostQuery(sqlTransferDump, (None,))
 
 # Loop through array, writing each line to .csv file
-transferline="%s, %s, %s, %s, %s, %s, %s, %s, %s\n"
+transferline="%s,%s,%s,%s,%s,%s,%s,%s,%s\n"
 for transfer in transfers:
     f.write(transferline % (transfer[0], transfer[1], transfer[2], transfer[3], transfer[4], transfer[5], transfer[6], transfer[7], transfer[8]))
 

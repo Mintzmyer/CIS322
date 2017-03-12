@@ -23,7 +23,7 @@ def lostQuery(sqlQuery, params):
 f = open('assets.csv', 'w')
 
 # Write header for file
-header = "asset_tag, description, facility, acquired, disposed\n"
+header = "asset_tag,description,facility,acquired,disposed\n"
 f.write(header) #Convert to string?
 
 # Collect users data in mass array dump
@@ -32,7 +32,7 @@ sqlAssetDump="SELECT a.tag, a.description, f.name, t.arrival, CASE WHEN al.facil
 assets=lostQuery(sqlAssetDump, (None,))
 
 # Loop through array, writing each line to .csv file
-assetline="%s, %s, %s, %s, %s\n"
+assetline="%s,%s,%s,%s,%s\n"
 for asset in assets:
     # Skip entry if it only communicates disposal
     if (asset[4]):
