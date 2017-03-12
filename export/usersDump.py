@@ -1,9 +1,10 @@
 import psycopg2
-from sys import argv
+import sys
+#from sys import argv
 
 
 def lostQuery(sqlQuery, params):
-    conn = psycopg2.connect("dbname='lost' user='osnapdev' host='127.0.0.1'")
+    conn = psycopg2.connect("dbname='"+sys.argv[1]+"' user='osnapdev' host='127.0.0.1'")
     cur = conn.cursor()
     if not (params):
         cur.execute(sqlQuery)
@@ -19,15 +20,22 @@ def lostQuery(sqlQuery, params):
     return result
 
 # Get arguments for file name to write to
+if not (len(sys.argv)==3):
+    print("usage: usersDump.py <db name> <output dir>")
+    quit()
+path=sys.argv[2]
+if not (path[-1]=='/'):
+    path=path+'/'
+path=path+'users.csv'
 
-f = open('users.csv', 'w')
+f = open(path, 'w')
 
 # Write header for file
 header = "username,password,role,active\n"
 f.write(header) #Convert to string?
 
 # Collect users data in mass array dump
-sqlUserDump="SELECT username, password, role_fk, active FROM users;"
+sqlUserDump="SELECT username, password, r.title, active FROM users inner join roles as r on users.role_fk=r.role_pk;"
 users=lostQuery(sqlUserDump, (None,))
 
 # Loop through array, writing each line to .csv file
@@ -37,3 +45,5 @@ for user in users:
 
 # Close file
 f.close()
+
+

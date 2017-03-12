@@ -1,9 +1,8 @@
 import psycopg2
-from sys import argv
-
+import sys
 
 def lostQuery(sqlQuery, params):
-    conn = psycopg2.connect("dbname='lost' user='osnapdev' host='127.0.0.1'")
+    conn = psycopg2.connect("dbname='"+sys.argv[1]+"' user='osnapdev' host='127.0.0.1'")
     cur = conn.cursor()
     if not (params):
         cur.execute(sqlQuery)
@@ -19,8 +18,15 @@ def lostQuery(sqlQuery, params):
     return result
 
 # Get arguments for file name to write to
+if not (len(sys.argv)==3):
+    print("usage: facilitiesDump.py <db name> <output dir>")
+    quit()
+path=sys.argv[2]
+if not (path[-1]=='/'):
+    path=path+'/'
+path=path+'facilities.csv'
 
-f = open('facilities.csv', 'w')
+f = open(path, 'w')
 
 # Write header for file
 header = "fcode,common_name\n"
