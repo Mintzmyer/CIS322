@@ -31,7 +31,7 @@ sqlUserDump="SELECT username, password, role_fk, active FROM users;"
 users=lostQuery(sqlUserDump, (None,))
 
 # Loop through array, writing each line to .csv file
-userline="%s, %s, %s, %s,\n"
+userline="%s, %s, %s, %s\n"
 for user in users:
     f.write(userline % (user[0], user[1], user[2], user[3]))
 
