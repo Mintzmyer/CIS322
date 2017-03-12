@@ -1,23 +1,23 @@
 #!/usr/bin/bash
 
 if [ "$#" -ne 2 ]; then
-	echo "Usage: bash import_data.sh <dbname> <input dir>"
+	echo "Usage: ./import_data.sh <dbname> <output dir>"
 	exit;
 fi
 
-# <dbname> DB to import data into. Run on localhost 127.0.0.1 port 5432
-# <input dir> Path to dir where data files should be read from
+# <dbname> Running on localhost 127.0.0.1 at port 5432
+# <output dir> Path where data files should be read from. If DNE, shoot it'll probably crash.
 
-# Set up the database tables
-cd sql
-psql $1 -f create_tables.sql
-# JUST FOR TESTING remove before submission!!!
-#psql $1 -f testvalues.sql
-cd ..
 
-#Install the wsgi files
-cp -R src/*.py $HOME/wsgi/
-cp -R src/*.html $HOME/wsgi/templates/
 
-# JUST FOR TESTING remove before submission!!!
-#apachectl restart
+# users.csv - a csv file containing user information
+python usersUp.py $1 $2/users.csv
+
+# facilities.csv - a csv file containing LOST facility information
+python facilitiesUp.py $1 $2/facilities.csv
+
+# assets.csv - a csv file containing LOST assets
+python assetsUp.py $1 $2/assets.csv
+
+# transfers.csv - a csv file containing transfer information
+python transfersUp.py $1 $2/transfers.csv

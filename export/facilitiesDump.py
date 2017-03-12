@@ -23,7 +23,7 @@ def lostQuery(sqlQuery, params):
 f = open('facilities.csv', 'w')
 
 # Write header for file
-header = "fcode, common_name\n"
+header = "fcode,common_name\n"
 f.write(header) #Convert to string?
 
 # Collect facilities data in mass array dump
@@ -31,7 +31,7 @@ sqlFacilityDump="SELECT code, name FROM facilities;"
 facilities=lostQuery(sqlFacilityDump, (None,))
 
 # Loop through array, writing each line to .csv file
-facilityline="%s, %s\n"
+facilityline="%s,%s\n"
 for facility in facilities:
     f.write(facilityline % (facility[0], facility[1]))
 
