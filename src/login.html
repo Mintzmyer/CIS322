@@ -1,11 +1,6 @@
 <html>
 	<body>
 		<h2>Please Login</h2>
-		<div align="right">
-			<form name = 'logout' action="{{url_for('logout')}}">
-				<input type="submit" value='Logout {{uname}}' name='logout' />
-			</form>
-		</div>
 		<p1>Welcome to L.O.S.T. web application. <br />{{login_msg}}</p1>
 
 		<form name='login' action="{{url_for('login')}}" method='POST'>
