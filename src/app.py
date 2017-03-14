@@ -7,8 +7,10 @@ import datetime
 
 
 global SECRET_KEY
+global currentDB
 
 SECRET_KEY = 'a0z987asdf'
+currentDB=
 
 app = Flask(__name__)
 app.secret_key = SECRET_KEY
@@ -21,7 +23,7 @@ if not os.path.exists(path):
 app.session_interface=PickleSessionInterface(path)
 
 def lostQuery(sqlQuery, params):
-    conn = psycopg2.connect("dbname='lost' user='osnapdev' host='127.0.0.1'")
+    conn = psycopg2.connect("dbname='"+currentDB+"' user='osnapdev' host='127.0.0.1'")
     #print("conn:"+str(conn))
     cur = conn.cursor()
     #print("cur:"+str(cur))
