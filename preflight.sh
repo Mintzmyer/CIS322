@@ -5,15 +5,13 @@ if [ "$#" -ne 1 ]; then
 	exit;
 fi
 # Set up the database tables
-cd sql
-psql $1 -f create_tables.sql
+psql $1 -f $HOME/CIS322/sql/create_tables.sql
 # JUST FOR TESTING remove before submission!!!
-#psql $1 -f testvalues.sql
-cd ..
+psql $1 -f $HOME/CIS322/sql/testvalues.sql
 
 #Install the wsgi files
-cp -R src/*.py $HOME/wsgi/
-cp -R src/*.html $HOME/wsgi/templates/
+cp -R $HOME/CIS322/src/*.py $HOME/wsgi/
+cp -R $HOME/CIS322/src/*.html $HOME/wsgi/templates/
 
 # Modify app.py to specified DB name
 match='currentDB='
@@ -23,4 +21,4 @@ file='app.py'
 sed -i "s/$match/$insert/" $HOME/wsgi/$file
 
 # JUST FOR TESTING remove before submission!!!
-#apachectl restart
+apachectl restart

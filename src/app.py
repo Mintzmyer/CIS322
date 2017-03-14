@@ -68,7 +68,7 @@ def login():
         #If user is not active, report that
         sqlActive="SELECT active from users where username=%s;"
         activeU=lostQuery(sqlActive, (username,))[0][0]
-        elif not (activeU):
+        if not (activeU):
             session['msg']="User is no longer active"
             return render_template('login.html', login_msg=session['msg'])
 
@@ -82,6 +82,7 @@ def login():
                 session['msg']="Username associated with a different password"
                 return render_template('login.html', login_msg=session['msg'])
             else:
+                session['msg']="Welcome"
                 session['user']=username
 
         return redirect(url_for('dashboard'))
@@ -112,6 +113,7 @@ def create_user():
             #Query new submission for session username
             sqlUsername="SELECT username from users where user_Pk=%s;"
             session['user']=str(lostQuery(sqlUsername, (userPk,))[0][0])
+            session['msg']="Welcome"
             #session['role']=role
         
         #If user already exists, report that.
@@ -124,6 +126,11 @@ def create_user():
 
 @app.route('/add_facility', methods=['GET', 'POST'])
 def add_facility():
+    # Check if user is logged in
+    if (session['user']==""):
+        session['msg']="Please log in."
+        return redirect(url_for('login'))
+
     sqlFacilities=("SELECT name, code FROM facilities;")
     if request.method=='GET':
         session['msg']="Ready to add a facility"
@@ -151,6 +158,11 @@ def add_facility():
 
 @app.route('/add_asset', methods=['GET', 'POST'])
 def add_asset():
+    # Check if user is logged in
+    if (session['user']==""):
+        session['msg']="Please log in."
+        return redirect(url_for('login'))
+
     sqlFacilities=("SELECT facility_pk, name FROM facilities;")
     sqlAssets=("SELECT a.tag, a.description, f.name from assets as a inner join asset_location as ao on a.asset_pk=ao.asset_fk inner join facilities as f on ao.facility_fk=f.facility_pk")
     facilities_list=lostQuery(sqlFacilities, None)
@@ -182,13 +194,18 @@ def add_asset():
 
 @app.route('/dispose_asset', methods=['GET', 'POST'])
 def dispose_asset():
+    # Check if user is logged in
+    if (session['user']==""):
+        session['msg']="Please log in."
+        return redirect(url_for('login'))
+
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))
     if not (role):
         session['msg']="required to dispose of assets"
         return redirect(url_for('dashboard'))
     if not (role[0][0]=="Logistics Officer"):
-        session['msg']="required to have the role of Logistics Officer to dispose of assets"
+        session['msg']="Logistics Officer role required to dispose of assets"
         return redirect(url_for('dashboard'))
     if request.method=='GET':
         session['msg']="User cleared to register dispose assets"
@@ -217,6 +234,11 @@ def dispose_asset():
 
 @app.route('/asset_report', methods=['GET', 'POST'])
 def asset_report():
+    # Check if user is logged in
+    if (session['user']==""):
+        session['msg']="Please log in."
+        return redirect(url_for('login'))
+
     sqlFacilities=("SELECT facility_pk, name FROM facilities;")
     facilities_list=lostQuery(sqlFacilities, None)
     if request.method=='GET':
@@ -237,6 +259,11 @@ def asset_report():
 
 @app.route('/transfer_req', methods=['GET', 'POST'])
 def transfer_req():
+    # Check if user is logged in
+    if (session['user']==""):
+        session['msg']="Please log in."
+        return redirect(url_for('login'))
+
     # Check user is a logistics officer
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))
@@ -244,7 +271,7 @@ def transfer_req():
         session['msg']="required to dispose of assets"
         return redirect(url_for('dashboard'))
     if not (role[0][0]=="Logistics Officer"):
-        session['msg']="required to have the role of Logistics Officer to dispose of assets"
+        session['msg']="Logistics Officer role required to create a transfer request"
         return redirect(url_for('dashboard'))
     
     # Get facilities
@@ -277,6 +304,11 @@ def transfer_req():
 
 @app.route('/approve_req', methods=['GET', 'POST'])
 def approve_req():
+    # Check if user is logged in
+    if (session['user']==""):
+        session['msg']="Please log in."
+        return redirect(url_for('login'))
+
     # Check user is a facilities officer
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))
@@ -284,7 +316,7 @@ def approve_req():
         session['msg']="required to dispose of assets"
         return redirect(url_for('dashboard'))
     if not (role[0][0]=="Facilities Officer"):
-        session['msg']="required to have the role of Facilities Officer to dispose of assets"
+        session['msg']="Facilities Officer role required to approve transit requests"
         return redirect(url_for('dashboard'))
     
     if request.method=='GET':
@@ -320,6 +352,11 @@ def approve_req():
 
 @app.route('/update_transit', methods=['GET', 'POST'])
 def update_transit():
+    # Check if user is logged in
+    if (session['user']==""):
+        session['msg']="Please log in."
+        return redirect(url_for('login'))
+
     # Check if user is a logistics officer
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))
@@ -327,7 +364,7 @@ def update_transit():
         session['msg']="required to dispose of assets"
         return redirect(url_for('dashboard'))
     if not (role[0][0]=="Logistics Officer"):
-        session['msg']="required to have the role of Logistics Officer to dispose of assets"
+        session['msg']="Logistics Officer role is required to update transit"
         return redirect(url_for('dashboard'))
     
     if request.method=='GET':
@@ -368,6 +405,11 @@ def update_transit():
 
 @app.route('/transfer_report', methods=['GET', 'POST'])
 def transfer_report():
+    # Check if user is logged in
+    if (session['user']==""):
+        session['msg']="Please log in."
+        return redirect(url_for('login'))
+
     if request.method=='GET':
         session['msg']="Please enter the date for assets in transit"
         blank=iter([])
@@ -385,6 +427,11 @@ def transfer_report():
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
     blank=iter([])
+    # Check if user is logged in
+    if (session['user']==""):
+        session['msg']="Please log in."
+        return redirect(url_for('login'))
+
     # Get role
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
     role=lostQuery(sqlRole,(session['user'],))[0][0]
@@ -403,6 +450,11 @@ def dashboard():
         sqlRequests="SELECT tr.request_pk, tr.request_pk, a.tag, f.name, f.name, tr.date_requested FROM transfer_request as tr inner join asset_transfers as atr on tr.request_pk=atr.request_fk inner join assets as a on atr.asset_fk=a.asset_pk inner join asset_location as al on a.asset_pk=al.asset_fk inner join facilities as f on al.facility_fk=f.facility_pk where (tr.approver_fk is NULL and tr.date_approved is NULL);" # My gosh it's hideous what have I done
         todo=lostQuery(sqlRequests, (None,))
         return render_template('dashboard.html', usermsg=session['msg'], tableheader=headers, ftodo_list=todo, ltodo_list=blank)
+    # If no role is associated or user not logged in, boot to login page
+    else:
+        session['msg']="Please log in with a Logistics or Facilities account."
+        return redirect(url_for('login'))
+        
 
 
 @app.route('/logout')

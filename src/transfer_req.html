@@ -2,6 +2,13 @@
 	<h1> Transfer Request Interface </h1>
 	<body>
 		{{transfer_msg}}
+
+		<div align="right">
+			<form name = 'dashboard' action="{{url_for('dashboard')}}">
+				<input type="submit" value='Dashboard' name='Dashboard' />
+			</form>
+		</div>
+
 		<br />
 		<form name='new_asset' action="{{url_for('transfer_req')}}" method='POST'>
 			<input type="text" placeholder='Asset Tag' name='atag' maxlength="16" required/>

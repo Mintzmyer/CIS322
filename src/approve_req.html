@@ -2,6 +2,13 @@
 	<h1> Approve Transit Interface </h1>
 	<body>
 		{{approve_msg}}
+		<div align="right">
+			<form name = 'dashboard' action="{{url_for('dashboard')}}">
+				<input type="submit" value='Dashboard' name='Dashboard' />
+			</form>
+		</div>
+
+
 		<br />
 		<table style="width:100%">
 			<tr>
