@@ -1,2 +1,3 @@
 This is the testing folder
-Inside is a testdoc.pdf
+	testdoc.pdf specifies testing for the LOST app
+	README.txt tells you everything on this screen
