@@ -87,6 +87,21 @@ def login():
 
         return redirect(url_for('dashboard'))
 
+@app.route('/revoke_user', methods=['POST'])
+def revoke_user():
+    if request.method=='POST' and 'username' in request.form:
+        username=request.form.get('username')
+
+        #Check DB for existing user
+        sqlUser="SELECT user_pk from users where username=%s;"
+        userPk=lostQuery(sqlUser, (username,))
+
+        #If user exists, update 'active' boolean to false
+        if (userPk):
+            sqlRevoke="UPDATE users SET active='0' where user_pk=%s;"
+            lostQuery(sqlRevoke, (userPk[0][0],))
+
+
 @app.route('/create_user', methods=['GET', 'POST'])
 def create_user():
     sqlRoles="SELECT role_pk, title from roles;"
