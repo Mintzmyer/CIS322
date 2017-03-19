@@ -16,11 +16,11 @@ app = Flask(__name__)
 app.secret_key = SECRET_KEY
 
 
-path='/dev/shm/lost_sessions'
-if not os.path.exists(path):
-    os.mkdir(path)
-    os.chmod(path, int('700',8))
-app.session_interface=PickleSessionInterface(path)
+#path='/dev/shm/lost_sessions'
+#if not os.path.exists(path):
+#    os.mkdir(path)
+#    os.chmod(path, int('700',8))
+#app.session_interface=PickleSessionInterface(path)
 
 def lostQuery(sqlQuery, params):
     conn = psycopg2.connect("dbname='"+currentDB+"' user='osnapdev' host='127.0.0.1'")
