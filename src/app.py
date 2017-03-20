@@ -87,10 +87,11 @@ def login():
 
         return redirect(url_for('dashboard'))
 
-@app.route('/revoke_user_client', methods=['POST'])
-def revoke_user_client():
-    if request.method=='POST' and 'username' in request.form:
-        username=request.form.get('username')
+@app.route('/revoke_user', methods=['POST'])
+def revoke_user():
+    if request.method=='POST' and 'arguments' in request.form:
+        user_rev=json.loads(request.form['arguments'])
+        username=user_rev['username']
 
         #Check DB for existing user
         sqlUser="SELECT user_pk from users where username=%s;"
@@ -98,8 +99,17 @@ def revoke_user_client():
 
         #If user exists, update 'active' boolean to false
         if (userPk):
-            sqlRevoke="UPDATE users SET active='0' where user_pk=%s;"
+            sqlRevoke="UPDATE users SET active='False' where user_pk=%s;"
             lostQuery(sqlRevoke, (userPk[0][0],))
+            result="User Revoked"
+
+        #If user doesn't exist, return message
+        else:
+            result="Unknown Username"
+        bundle = dict()
+        bundle['result']=result
+        res = json.dumps(bundle)
+        return res
 
 @app.route('/activate_user', methods=['POST'])
 def activate_user():
@@ -122,8 +132,6 @@ def activate_user():
         else: 
             result="Unknown Role"
             role=None
-
-
 
         #Check DB for existing user
         sqlUser="SELECT user_pk from users where username=%s;"
