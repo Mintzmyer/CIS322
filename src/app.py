@@ -87,8 +87,8 @@ def login():
 
         return redirect(url_for('dashboard'))
 
-@app.route('/revoke_user', methods=['POST'])
-def revoke_user():
+@app.route('/revoke_user_client', methods=['POST'])
+def revoke_user_client():
     if request.method=='POST' and 'username' in request.form:
         username=request.form.get('username')
 
@@ -99,6 +99,35 @@ def revoke_user():
         #If user exists, update 'active' boolean to false
         if (userPk):
             sqlRevoke="UPDATE users SET active='0' where user_pk=%s;"
+            lostQuery(sqlRevoke, (userPk[0][0],))
+
+@app.route('/create_user_client', methods=['POST'])
+def create_user_client():
+    sqlRoles="SELECT role_pk, title from roles;"
+    roles_list=lostQuery(sqlRoles, None)
+    if request.method=='POST' and 'username' and 'password' and 'role' in request.form:
+        username=request.form.get('username')
+        password=request.form.get('password')
+        role=request.form.get('role')
+
+        #Check DB for existing user
+        sqlUser="SELECT user_pk from users where username=%s;"
+        userPk=lostQuery(sqlUser, (username,))
+        
+        #If user does not exist, insert submitted data into users table
+        if not (userPk):
+            sqlNewUser="INSERT INTO users(username, password, role_fk, active) VALUES (%s, %s, %s, %s);"
+            lostQuery(sqlNewUser, (username, password, role, True))    
+            sqlUser="SELECT user_pk from users where username=%s;"
+            userPk=str(lostQuery(sqlUser, (username,))[0][0])
+            #Query new submission for session username
+            sqlUsername="SELECT username from users where user_Pk=%s;"
+            session['user']=str(lostQuery(sqlUsername, (userPk,))[0][0])
+            session['msg']="Welcome"
+        
+        #If user exists, make them active and update their password
+        if (userPk):
+            sqlRevoke="UPDATE users SET active='1', password=%s, where user_pk=%s;"
             lostQuery(sqlRevoke, (userPk[0][0],))
 
 
