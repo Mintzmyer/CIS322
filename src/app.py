@@ -159,44 +159,6 @@ def activate_user():
         res = json.dumps(bundle)
         return res
 
-
-@app.route('/create_user', methods=['GET', 'POST'])
-def create_user():
-    sqlRoles="SELECT role_pk, title from roles;"
-    roles_list=lostQuery(sqlRoles, None)
-    if request.method=='GET':
-        session['msg']="Please create your username and password:"
-        return render_template('create_user.html', roles_list=roles_list, create_msg=session['msg'])
-    
-    if request.method=='POST' and 'username' and 'password' in request.form:
-        username=request.form.get('username')
-        password=request.form.get('password')
-        role=request.form.get('role')
-
-        #Check DB for existing user
-        sqlUser="SELECT user_pk from users where username=%s;"
-        userPk=lostQuery(sqlUser, (username,))
-        
-        #If user does not exist, insert submitted data into users table
-        if not (userPk):
-            sqlNewUser="INSERT INTO users(username, password, role_fk, active) VALUES (%s, %s, %s, %s);"
-            lostQuery(sqlNewUser, (username, password, role, True))    
-            sqlUser="SELECT user_pk from users where username=%s;"
-            userPk=str(lostQuery(sqlUser, (username,))[0][0])
-            #Query new submission for session username
-            sqlUsername="SELECT username from users where user_Pk=%s;"
-            session['user']=str(lostQuery(sqlUsername, (userPk,))[0][0])
-            session['msg']="Welcome"
-            #session['role']=role
-        
-        #If user already exists, report that.
-        else:
-            session['msg']="Username already registered."
-            return render_template('create_user.html', roles_list=roles_list, create_msg=session['msg'])
-
-        #Redirect to dashboard where the username is proudly displayed
-        return redirect(url_for('dashboard'))
-
 @app.route('/add_facility', methods=['GET', 'POST'])
 def add_facility():
     # Check if user is logged in
