@@ -101,21 +101,42 @@ def revoke_user_client():
             sqlRevoke="UPDATE users SET active='0' where user_pk=%s;"
             lostQuery(sqlRevoke, (userPk[0][0],))
 
-@app.route('/create_user_client', methods=['POST'])
-def create_user_client():
+@app.route('/activate_user', methods=['POST'])
+def activate_user():
+    # Get role_pk from roles
     sqlRoles="SELECT role_pk, title from roles;"
     roles_list=lostQuery(sqlRoles, None)
-    if request.method=='POST' and 'username' and 'password' and 'role' in request.form:
-        username=request.form.get('username')
-        password=request.form.get('password')
-        role=request.form.get('role')
+    facofc=logofc=0
+    for role in roles_list:
+        if role[1]=="Facility Officer": facofc=role[0]
+        if role[1]=="Logistics Officer": logofc=role[0]
+
+    if request.method=='POST' and 'arguments' in request.form:
+        user_req=json.loads(request.form['arguments'])
+        username=user_req['username']
+        password=user_req['password']
+        if (user_req['role']=="facofc"):
+            role=facofc
+        elif (user_req['role']=="logofc"):
+            role=logofc
+        else: 
+            result="Unknown Role"
+            role=None
+
+
 
         #Check DB for existing user
         sqlUser="SELECT user_pk from users where username=%s;"
         userPk=lostQuery(sqlUser, (username,))
         
+        #If user exists, make them active and update their password
+        if (userPk):
+            sqlRevoke="UPDATE users SET active='1', password=%s where user_pk=%s;"
+            lostQuery(sqlRevoke, (password, userPk[0][0]))
+            result="Password Updated"
+ 
         #If user does not exist, insert submitted data into users table
-        if not (userPk):
+        if (not userPk) and (role != None):
             sqlNewUser="INSERT INTO users(username, password, role_fk, active) VALUES (%s, %s, %s, %s);"
             lostQuery(sqlNewUser, (username, password, role, True))    
             sqlUser="SELECT user_pk from users where username=%s;"
@@ -123,12 +144,12 @@ def create_user_client():
             #Query new submission for session username
             sqlUsername="SELECT username from users where user_Pk=%s;"
             session['user']=str(lostQuery(sqlUsername, (userPk,))[0][0])
-            session['msg']="Welcome"
-        
-        #If user exists, make them active and update their password
-        if (userPk):
-            sqlRevoke="UPDATE users SET active='1', password=%s, where user_pk=%s;"
-            lostQuery(sqlRevoke, (userPk[0][0],))
+            result="Successfully Created"
+
+        bundle = dict()
+        bundle['result']=result
+        res = json.dumps(bundle)
+        return res
 
 
 @app.route('/create_user', methods=['GET', 'POST'])
@@ -171,7 +192,7 @@ def create_user():
 @app.route('/add_facility', methods=['GET', 'POST'])
 def add_facility():
     # Check if user is logged in
-    if (session['user']==""):
+    if ('user' not in session) or (session['user']==""):
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -203,7 +224,7 @@ def add_facility():
 @app.route('/add_asset', methods=['GET', 'POST'])
 def add_asset():
     # Check if user is logged in
-    if (session['user']==""):
+    if ('user' not in session) or (session['user']==""):
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -239,7 +260,7 @@ def add_asset():
 @app.route('/dispose_asset', methods=['GET', 'POST'])
 def dispose_asset():
     # Check if user is logged in
-    if (session['user']==""):
+    if ('user' not in session) or (session['user']==""):
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -279,7 +300,7 @@ def dispose_asset():
 @app.route('/asset_report', methods=['GET', 'POST'])
 def asset_report():
     # Check if user is logged in
-    if (session['user']==""):
+    if ('user' not in session) or (session['user']==""):
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -304,7 +325,7 @@ def asset_report():
 @app.route('/transfer_req', methods=['GET', 'POST'])
 def transfer_req():
     # Check if user is logged in
-    if (session['user']==""):
+    if ('user' not in session) or (session['user']==""):
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -349,7 +370,7 @@ def transfer_req():
 @app.route('/approve_req', methods=['GET', 'POST'])
 def approve_req():
     # Check if user is logged in
-    if (session['user']==""):
+    if ('user' not in session) or (session['user']==""):
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -397,7 +418,7 @@ def approve_req():
 @app.route('/update_transit', methods=['GET', 'POST'])
 def update_transit():
     # Check if user is logged in
-    if (session['user']==""):
+    if ('user' not in session) or (session['user']==""):
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -450,7 +471,7 @@ def update_transit():
 @app.route('/transfer_report', methods=['GET', 'POST'])
 def transfer_report():
     # Check if user is logged in
-    if (session['user']==""):
+    if ('user' not in session) or (session['user']==""):
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -472,7 +493,7 @@ def transfer_report():
 def dashboard():
     blank=iter([])
     # Check if user is logged in
-    if (session['user']==""):
+    if ('user' not in session) or (session['user']==""):
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
