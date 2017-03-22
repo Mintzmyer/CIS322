@@ -118,7 +118,7 @@ def activate_user():
     roles_list=lostQuery(sqlRoles, None)
     facofc=logofc=0
     for role in roles_list:
-        if role[1]=="Facility Officer": facofc=role[0]
+        if role[1]=="Facilities Officer": facofc=role[0]
         if role[1]=="Logistics Officer": logofc=role[0]
 
     if request.method=='POST' and 'arguments' in request.form:
@@ -139,9 +139,9 @@ def activate_user():
         
         #If user exists, make them active and update their password
         if (userPk):
-            sqlRevoke="UPDATE users SET active='1', password=%s where user_pk=%s;"
-            lostQuery(sqlRevoke, (password, userPk[0][0]))
-            result="Password Updated"
+            sqlUpdate="UPDATE users SET active='1', password=%s, role_fk=%s where user_pk=%s;"
+            lostQuery(sqlUpdate, (password, role, userPk[0][0]))
+            result="User Updated"
  
         #If user does not exist, insert submitted data into users table
         if (not userPk) and (role != None):
@@ -162,7 +162,13 @@ def activate_user():
 @app.route('/add_facility', methods=['GET', 'POST'])
 def add_facility():
     # Check if user is logged in
-    if ('user' not in session) or (session['user']==""):
+    if ('user' in session):
+        sqlverify="SELECT user_pk from users where username=%s;"
+        loggedOn=lostQuery(sqlverify, (session['user'],))
+        if not (loggedOn):
+            session['msg']="Please log in."
+            return redirect(url_for('login'))
+    else:
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -194,7 +200,13 @@ def add_facility():
 @app.route('/add_asset', methods=['GET', 'POST'])
 def add_asset():
     # Check if user is logged in
-    if ('user' not in session) or (session['user']==""):
+    if ('user' in session):
+        sqlverify="SELECT user_pk from users where username=%s;"
+        loggedOn=lostQuery(sqlverify, (session['user'],))
+        if not (loggedOn):
+            session['msg']="Please log in."
+            return redirect(url_for('login'))
+    else:
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -230,7 +242,13 @@ def add_asset():
 @app.route('/dispose_asset', methods=['GET', 'POST'])
 def dispose_asset():
     # Check if user is logged in
-    if ('user' not in session) or (session['user']==""):
+    if ('user' in session):
+        sqlverify="SELECT user_pk from users where username=%s;"
+        loggedOn=lostQuery(sqlverify, (session['user'],))
+        if not (loggedOn):
+            session['msg']="Please log in."
+            return redirect(url_for('login'))
+    else:
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -270,7 +288,13 @@ def dispose_asset():
 @app.route('/asset_report', methods=['GET', 'POST'])
 def asset_report():
     # Check if user is logged in
-    if ('user' not in session) or (session['user']==""):
+    if ('user' in session):
+        sqlverify="SELECT user_pk from users where username=%s;"
+        loggedOn=lostQuery(sqlverify, (session['user'],))
+        if not (loggedOn):
+            session['msg']="Please log in."
+            return redirect(url_for('login'))
+    else:
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -295,7 +319,13 @@ def asset_report():
 @app.route('/transfer_req', methods=['GET', 'POST'])
 def transfer_req():
     # Check if user is logged in
-    if ('user' not in session) or (session['user']==""):
+    if ('user' in session):
+        sqlverify="SELECT user_pk from users where username=%s;"
+        loggedOn=lostQuery(sqlverify, (session['user'],))
+        if not (loggedOn):
+            session['msg']="Please log in."
+            return redirect(url_for('login'))
+    else:
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -340,7 +370,13 @@ def transfer_req():
 @app.route('/approve_req', methods=['GET', 'POST'])
 def approve_req():
     # Check if user is logged in
-    if ('user' not in session) or (session['user']==""):
+    if ('user' in session):
+        sqlverify="SELECT user_pk from users where username=%s;"
+        loggedOn=lostQuery(sqlverify, (session['user'],))
+        if not (loggedOn):
+            session['msg']="Please log in."
+            return redirect(url_for('login'))
+    else:
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -388,7 +424,13 @@ def approve_req():
 @app.route('/update_transit', methods=['GET', 'POST'])
 def update_transit():
     # Check if user is logged in
-    if ('user' not in session) or (session['user']==""):
+    if ('user' in session):
+        sqlverify="SELECT user_pk from users where username=%s;"
+        loggedOn=lostQuery(sqlverify, (session['user'],))
+        if not (loggedOn):
+            session['msg']="Please log in."
+            return redirect(url_for('login'))
+    else:
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -441,7 +483,13 @@ def update_transit():
 @app.route('/transfer_report', methods=['GET', 'POST'])
 def transfer_report():
     # Check if user is logged in
-    if ('user' not in session) or (session['user']==""):
+    if ('user' in session):
+        sqlverify="SELECT user_pk from users where username=%s;"
+        loggedOn=lostQuery(sqlverify, (session['user'],))
+        if not (loggedOn):
+            session['msg']="Please log in."
+            return redirect(url_for('login'))
+    else:
         session['msg']="Please log in."
         return redirect(url_for('login'))
 
@@ -461,11 +509,18 @@ def transfer_report():
 
 @app.route('/dashboard', methods=['GET'])
 def dashboard():
-    blank=iter([])
     # Check if user is logged in
-    if ('user' not in session) or (session['user']==""):
+    if ('user' in session):
+        sqlverify="SELECT user_pk from users where username=%s;"
+        loggedOn=lostQuery(sqlverify, (session['user'],))
+        if not (loggedOn):
+            session['msg']="Please log in."
+            return redirect(url_for('login'))
+    else:
         session['msg']="Please log in."
         return redirect(url_for('login'))
+
+    blank=iter([])
 
     # Get role
     sqlRole="SELECT r.title from roles as r inner join users as u on u.role_fk=r.role_pk where u.username=%s;"
